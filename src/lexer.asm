@@ -16,7 +16,7 @@
 ;================================;
 ; Project:   Cool assembler      ;
 ; File:      lexer.asm           ;
-; FIle type: Part                ; 
+; FIle type: Part                ;
 ; Author:    Incremnt            ;
 ; License:   GPLv3               ;
 ;================================;
@@ -24,7 +24,7 @@
 lexer:
   mov       rbp, delimiter_tbl             ; init delimiter table
   mov       byte [rbp + TAB], IGN_DEL      ;
-  mov       byte [rbp + SPC], IGN_DEL      ; 
+  mov       byte [rbp + SPC], IGN_DEL      ;
   mov       byte [rbp + ';'], CMT_DEL      ;
   mov       byte [rbp + '#'], LBL_DEL      ;
   mov       byte [rbp + '0'], NUM_DEL      ;
@@ -79,7 +79,7 @@ lexer:
   mov       byte [rcx + '['], VALID      ;
   mov       byte [rcx + ']'], VALID      ;
 
-  lea       r13, [LEX_IR_BUF_SZ * 2]     ; init pointers
+  lea       r13, [LEX_IRBUF_SIZE * 2]    ; init pointers
   lea       r9, [r14 + r13 - 1]          ;
   mov       r15, lex_trie                ;
 
@@ -88,11 +88,11 @@ next_lex:
   test      al, al                            ; handle eof
   jz        handle_eof                        ;
   cmp       byte [rbp + rax], DELIM           ; other logic if char is delimiter
-  jge       handle_del                        ; 
+  jge       handle_del                        ;
   movzx     rdx, word [rbx + rax * 2]         ; trie node index in rdx
   test      dx, dx                            ; error if node is unknown
   jz        unk_tkn_err                       ;
-  lea       r15, [lex_trie + rdx]             ; trie node pointer in r15 
+  lea       r15, [lex_trie + rdx]             ; trie node pointer in r15
 
 traverse:
   cmp       al, byte [r15]                    ; compare lexeme char with trie node char
@@ -101,7 +101,7 @@ traverse:
   test      dx, dx                            ; error if no siblings
   jz        unk_tkn_err                       ;
   lea       r15, [r15 + rdx * 8]              ; else, go to the sibling node
-  jmp       traverse                          ; 
+  jmp       traverse                          ;
 .char_matches:
   cmp       byte [r15 + LEX_TERM_OFF], TERM   ; potentially write IR if node is terminal
   je        terminal                          ;
@@ -122,7 +122,7 @@ terminal:
   movzx     rdx, byte [r15 + LEX_CHDOFF_OFF]  ;
   lea       r15, [r15 + rdx * 8]              ; go to the child node
   jmp       chd_traverse                      ; traverse children of terminal node
-  
+
 chd_traverse:
   cmp       al, byte [r15]                    ; continue traverse if char matches
   je        .chd_char_matches                 ;
@@ -229,7 +229,7 @@ write_del:
   inc       r12                      ;
   movzx     rax, byte [r12]          ;
   jmp       next_lex                 ;
- 
+
 write_long_del:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
   jl        .skip_call                       ;
@@ -261,7 +261,7 @@ write_long_del:
   lea       r14, [r14 + 2]                   ;
   movzx     rax, byte [r12]                  ;
   jmp       next_lex                         ;
- 
+
 write_string:
   cmp       r14, r9                          ; expand IR buffer if it needs more space, blah, blah, blah...
   jl        .skip_call                       ;
@@ -297,15 +297,14 @@ write_strend_ir:
   jmp       next_lex                         ;
 
 write_number:
-  cmp       r14, r9                          ; expand... IR... buffer if it needs more space...
+  cmp       r14, r9                          ; expand IR buffer if it needs more space
   jl        .skip_call                       ;
   call      exp_ir_buf                       ;
 .skip_call:
   mov       byte [r14 + 1], C_NUM            ; set number start IR
-  lea       r14, [r14 + 3]                   ;
-  xor       rdi, rdi                         ; rdi will be use as converted number buffer
+  lea       r14, [r14 + 2]                   ;
+  xor       rdi, rdi                         ; rdi - converted number buffer
   movzx     rsi, byte [r12]                  ;
-  lea       r11, [r14 - 1]                   ; r11 as pointer to the byte with lenght
 .convert_num:
   lea       esi, [esi - '0']                 ; convert character to number
   cmp       sil, 10                          ; error if it is not number character
@@ -319,35 +318,23 @@ write_number:
   cmp       byte [rbp + rsi], NUM_DEL        ; stop converting if found not-number character
   je        .convert_num                     ;
   mov       esi, edi                         ;
-  xor       r8, r8                           ;
+  mov       rdi, 4                           ;
 .write_insides:
   cmp       r14, r9                          ;
   jl        .skip_call2                      ;
-  push      r11                              ;
+  push      rdi                              ;
   call      exp_ir_buf                       ;
-  pop       r11                              ;
+  pop       rdi                              ;
 .skip_call2:
   test      esi, esi                         ; write converted number
-  jz        write_num_len                    ;
+  jz        end_num_write                    ;
   mov       byte [r14], sil                  ;
   inc       r14                              ;
+  dec       rdi                              ;
   shr       esi, 8                           ;
-  inc       r8b                              ;
   jmp       .write_insides                   ;
-write_num_len:
-  cmp       r8, 3                            ;
-  jl        .skip_exp                        ;
-  inc       r14                              ;
-  inc       r8b                              ;
-.skip_exp:
-  mov       byte [r11], r8b                  ;
-  lea       r8, [r8 - 4]                     ;
-  neg       r8                               ;
-  lea       r14, [r14 + r8]                  ;
-  cmp       r14, r9                          ;
-  jl        .skip_call                       ;
-  call      exp_ir_buf                       ;
-.skip_call:                                  ;
+end_num_write:
+  lea       r14, [r14 + rdi]                 ; make number 4 bytes long
   movzx     rax, byte [r12]                  ;
   jmp       next_lex                         ;
 
@@ -357,22 +344,24 @@ exp_ir_buf:
   lea       rsi, [rax + r13]                 ;
   SYSCALL_1 SYS_BRK, rsi                     ; allocate memory
   mov       rcx, valid_char_tbl              ; restore valid characters table pointer
-  mov       rsi, qword [lex_ir_buf_ptr]      ;
+  mov       rsi, qword [lex_irbuf_ptr]       ;
   lea       r13, [r13 * 2]                   ; will allocate x2 more memory next time
   lea       r9, [rsi + r13 - 1]              ; update r9
   pop       rsi                              ; restore rsi
   ret                                        ;
 
 handle_eof:
-  cmp       r14, r9                          ; expand IR buffer by 2 if it needs more space
+  cmp       r14, r9                          ; expand IR buffer by 2 bytes if it needs more space
   jl        .write_eof                       ;
   SYSCALL_1 SYS_BRK, 0                       ;
   lea       rsi, [rax + 2]                   ;
   SYSCALL_1 SYS_BRK, rsi                     ;
 .write_eof:
   mov       byte [r14 + 1], C_EOF            ; write eof IR and end lexer
-  lea       r14, [r14 + 2]                   ; r14 is pointer to parser IR buffer
-  lea       rsi, [r14 + r13]                 ; allocate memory for parser IR buffer
+  lea       r14, [r14 + 2]                   ; r14 - pointer to parser IR buffer
+  lea       rbp, [r14 + r13]                 ; rbp - pointer to phdr buffer
+  lea       rsi, [r14 + r13 + PHDRBUF_SIZE]  ; allocate memory for parser IR buffer and phdr buffer
   SYSCALL_1 SYS_BRK, rsi                     ;
+  mov       qword [phdrbuf_ptr], rbp         ; save phdr buffer pointer
 
 lexer_end = $
