@@ -60,54 +60,54 @@ ctrl_group:
   jmp       parser_end
 
 .handle_num:
-  mov       rdx, 1
+  mov       rcx, 1
   mov       rdi, 2
   mov       rsi, 4
   test      rbx, IMM16_BIT
-  cmovnz    rdx, rdi
+  cmovnz    rcx, rdi
   test      rbx, IMM32_BIT
-  cmovnz    rdx, rsi
+  cmovnz    rcx, rsi
   lea       r12, [r12 + 2]
-  mov       cl, 4
+  lea       r13, [r12 + 4]
 .write_num:
   mov       al, byte [r12]
   mov       byte [r14], al
   inc       r15d
   inc       r14
   inc       r12
-  dec       cl
+  dec       rcx
   jnz       .write_num
+  mov       r12, r13
   jmp       parse_ir
 
 .handle_mem_num:
 
 
 .handle_str:
-  lea       r12, [r12 + 2]
+  mov       rcx, 1
   mov       rsi, 2
   mov       rdi, 4
-  test      rbx, IMM8_BIT
-  setnz     cl
   test      rbx, IMM16_BIT
   cmovnz    rcx, rsi
-  cmovz     rcx, rdi
+  test      rbx, IMM32_BIT
+  cmovnz    rcx, rdi
+  lea       r12, [r12 + 2]
+  lea       r13, [r12 + 4]
 .write_str:
   mov       al, byte [r12]
   mov       byte [r14], al
+  inc       r15d
   inc       r12
   inc       r14
-  test      al, al
-  jz        .end_write
-  dec       cl
-  jmp       .write_str
-.end_write:
-  cmp       rbx, DIR_BIT + IMM8_BIT
-  je        .skip_strlen_check
-  test      cl, cl
-  jnz       op_sz_not_match_err
-  or        rbx, PLUS_BIT + MINUS_BIT
-.skip_strlen_check:
-  inc       r12
+  dec       rcx
+  test      rcx, rcx
+  jnz       .write_str
+  mov       r12, r13
+  mov       ax, word [r12]
+  xchg      ah, al
+  cmp       ax, C_STR
+  jne       op_sz_not_match_err
+  lea       r12, [r12 + 2]
   jmp       parse_ir
 
 .handle_mem_str:
@@ -230,6 +230,8 @@ traverse_operands:
   mov       dil, byte [r13 + 1]
   cmp       dil, C_NUM
   je        .cmp_num
+  cmp       dil, C_STR
+  je        .cmp_num
   cmp       dil, C_BYTE
   jl        invalid_expression_err
   test      word [rsi + PAR_NODEFLAGS_OFF], MEM
@@ -284,17 +286,17 @@ dir_group:
   jmp       qword [dir_jmp_tbl + rax * 8]                 ;
 
 .handle_db:
-  or        rbx, IMM8_BIT
+  mov       rbx, IMM8_BIT
   lea       r12, [r12 + 2]
   jmp       parse_ir
 
 .handle_dw:
-  or        rbx, IMM16_BIT
+  mov       rbx, IMM16_BIT
   lea       r12, [r12 + 2]
   jmp       parse_ir
 
 .handle_dd:
-  or        rbx, IMM32_BIT
+  mov       rbx, IMM32_BIT
   lea       r12, [r12 + 2]
   jmp       parse_ir
 
