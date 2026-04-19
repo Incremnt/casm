@@ -16,7 +16,7 @@
 ;================================;
 ; Project:   Cool assembler      ;
 ; File:      macros.inc          ;
-; FIle type: Part                ; 
+; FIle type: Part                ;
 ; Author:    Incremnt            ;
 ; License:   GPLv3               ;
 ;================================;
@@ -47,14 +47,13 @@ macro LEX_NODE char, ir_group, ir, child_offset, sibling_offset, is_terminal {
   db is_terminal
 }
 
-macro PAR_NODE ir_group, opcode_prefix, opcode, child_offset, sibling_offset, parser_flags, node_flags {
+macro PAR_NODE ir_group, opcode, child_offset, sibling_offset, parser_flags, node_flags {
   db ir_group
-  db opcode_prefix
   db opcode
   db child_offset
   db sibling_offset
   dw parser_flags
-  db node_flags
+  dw node_flags
 }
 
 ;-----------------;
@@ -75,6 +74,17 @@ SEEK_SET     = 0
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
 
+; elf stuff
+EI_CLASS32  = 1
+EI_DATA2LSB = 1
+EV_CURRENT  = 1
+EI_OSABI    = 0
+EI_VERCURR  = 0
+ET_EXEC     = 2
+EM_386      = 3
+EV_CURRENT  = 1
+PT_LOAD     = 1
+
 ; lexer trie node offsets
 LEX_IR_OFF     = 1
 LEX_CHDOFF_OFF = 3
@@ -82,31 +92,50 @@ LEX_SIBOFF_OFF = 5
 LEX_TERM_OFF   = 7
 
 ; parser trie node offsets
-PAR_PREF_OFF      = 1
-PAR_OP_OFF        = 2
-PAR_CHDOFF_OFF    = 3
-PAR_SIBOFF_OFF    = 4
-PAR_PARFLAGS_OFF  = 5
-PAR_NODEFLAGS_OFF = 7
+PAR_OP_OFF        = 1
+PAR_CHDOFF_OFF    = 2
+PAR_SIBOFF_OFF    = 3
+PAR_PARFLAGS_OFF  = 4
+PAR_NODEFLAGS_OFF = 6
 
 ; bool constants
 VALID    = 1
 
 ; parser trie bits
-TERM     = 0x01
-MODRM    = 0x02
-SIB      = 0x04
-SHORT_OP = 0x08
-MEM      = 0x10
-IMM      = 0x20
+TERM     = 0x0001
+MODRM    = 0x0002
+SIB      = 0x0004
+SHORT_OP = 0x0008
+MEM      = 0x0010
+IMM      = 0x0020
+TWOBYTE  = 0x0040
+OPSIZE   = 0x0080
+OPNUM1   = 0x0100
+OPNUM2   = 0x0200
+OPNUM3   = 0x0400
+OPNUM4   = 0x0800
+OPNUM5   = 0x1000
+OPNUM6   = 0x2000
+OPNUM7   = 0x4000
+OPNUM7   = 0x8000
 
 ; standard streams
 STDIN  = 0
 STDOUT = 1
 STDERR = 2
 
-; flags
+; file open flags
 O_RDONLY = 0
+O_WRONLY = 1
+O_CREAT  = 64
+O_APPEND = 1024
+O_TRUNC  = 512
+OC_744   = 0744o
+
+; rwx flags
+R = 4
+W = 2
+X = 1
 
 ; characters
 NUL = 0
@@ -130,23 +159,24 @@ COM_DEL = 10
 LF_DEL  = 11
 ADR_DEL = 12
 
-; lexer IR buffer size
-LEX_IR_BUF_SZ = 8192
+; buffer sizes
+LEX_IRBUF_SIZE = 8192
+PHDRBUF_SIZE   = 4096
 
 ; parser status bits
-LF_BIT    = 0x0001
-INSTR_BIT = 0x0002
-DIR_BIT   = 0x0008
-PLUS_BIT  = 0x0010
-MINUS_BIT = 0x0020
-MUL_BIT   = 0x0040
-IMM8_BIT  = 0x0080
-IMM16_BIT = 0x0100
-IMM32_BIT = 0x0200
-MEM8_BIT  = 0x0400
-MEM16_BIT = 0x0800
-MEM32_BIT = 0x1000
-ADDR_BIT  = 0x2000
+INSTR_BIT   = 0x0001
+DIR_BIT     = 0x0002
+PLUS_BIT    = 0x0004
+MINUS_BIT   = 0x0008
+MUL_BIT     = 0x0010
+IMM8_BIT    = 0x0020
+IMM16_BIT   = 0x0080
+IMM32_BIT   = 0x0100
+MEM8_BIT    = 0x0200
+MEM16_BIT   = 0x0400
+MEM32_BIT   = 0x0800
+ADDR_BIT    = 0x1000
+PHFIRST_BIT = 0x8000
 
 ; IR groups
 G_CTRL  = 0
@@ -178,10 +208,8 @@ D_DB     = 0
 D_DW     = 1
 D_DD     = 2
 D_TEXT   = 3
-D_BSS    = 4
-D_DATA   = 5
-D_RODATA = 6
-D_STACK  = 7
+D_DATA   = 4
+D_RODATA = 5
 
 ; instructions
 I_MOV  = 0
@@ -193,17 +221,15 @@ I_CMP  = 5
 I_JMP  = 6
 I_TEST = 7
 I_OR   = 8
-I_OUT  = 9
-I_AND  = 10
-I_ADD  = 11
-I_XOR  = 12
-I_NOT  = 13
-I_NOP  = 14
-I_IN   = 15
-I_INT  = 16
-I_INC  = 17
-I_DEC  = 18
-I_SUB  = 19
+I_AND  = 9
+I_ADD  = 10
+I_XOR  = 11
+I_NOT  = 12
+I_NOP  = 13
+I_INT  = 14
+I_INC  = 15
+I_DEC  = 16
+I_SUB  = 17
 
 ; extended instructions (0x0F prefix in opcode)
 E_JE    = 0
@@ -234,8 +260,8 @@ E_MOVSX = 23
 ; 32-bit registers
 R32_EAX = 0
 R32_ECX = 1
-R32_EBX = 2
-R32_EDX = 3
+R32_EDX = 2
+R32_EBX = 3
 R32_ESP = 4
 R32_EBP = 5
 R32_ESI = 6
@@ -244,8 +270,8 @@ R32_EDI = 7
 ; 16-bit registers
 R16_AX  = 0
 R16_CX  = 1
-R16_BX  = 2
-R16_DX  = 3
+R16_DX  = 2
+R16_BX  = 3
 R16_SP  = 4
 R16_BP  = 5
 R16_SI  = 6
