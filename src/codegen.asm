@@ -31,7 +31,6 @@ codegen:
   mov       rsi, qword [par_irbuf_ptr]        ; write opcodes
   mov       rcx, r14                          ;
   sub       rcx, rsi                          ;
-  inc       rcx                               ;
   SYSCALL_3 SYS_WRITE, rbx, rsi, rcx          ;
 
   SYSCALL_1 SYS_CLOSE, rbx                    ; close file
