@@ -1,4 +1,4 @@
-; Copyright (C) 2025 Denis Bazhenov
+; Copyright (C) 2026 Denis Bazhenov
 ;
 ; This program is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -21,5 +21,19 @@
 ; License:   GPLv3               ;
 ;================================;
 codegen:
-; sorry we only serve ELF in the summer
+  mov       rbx, qword [output_fd]            ; write elf header to the output file
+  SYSCALL_3 SYS_WRITE, rbx, ehdr, EHSIZE      ;
+
+  lea       rcx, [rbp]                        ; write program headers
+  sub       rcx, qword [phdrbuf_ptr]          ;
+  SYSCALL_3 SYS_WRITE, rbx, rbp, rcx          ;
+
+  mov       rsi, qword [par_irbuf_ptr]        ; write opcodes
+  mov       rcx, r14                          ;
+  sub       rcx, rsi                          ;
+  inc       rcx                               ;
+  SYSCALL_3 SYS_WRITE, rbx, rsi, rcx          ;
+
+  SYSCALL_1 SYS_CLOSE, rbx                    ; close file
+
 codegen_end = $
