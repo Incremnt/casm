@@ -257,9 +257,9 @@ traverse_operands:
   movzx     rdi, byte [rsi + PAR_CHDOFF_OFF]      ; else, go to the child node
   test      di, di                                ;
   jz        invalid_expression_err                ;
+  lea       r13, [r13 + 4]                        ;
   cmp       byte [r13 - 1], C_COM                 ;
   jne       invalid_expression_err                ;
-  lea       r13, [r13 + 4]                        ;
   cmp       ax, C_NUM                             ;
   jne       .not_num                              ;
   lea       r13, [r13 + 4]                        ; numbers and string have longer token to skip
