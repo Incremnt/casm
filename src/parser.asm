@@ -257,6 +257,8 @@ traverse_operands:
   movzx     rdi, byte [rsi + PAR_CHDOFF_OFF]      ; else, go to the child node
   test      di, di                                ;
   jz        invalid_expression_err                ;
+  cmp       byte [r13 - 1], C_COM                 ;
+  jne       invalid_expression_err                ;
   lea       r13, [r13 + 4]                        ;
   cmp       ax, C_NUM                             ;
   jne       .not_num                              ;
@@ -271,8 +273,6 @@ traverse_operands:
   jne       .skip_str                             ;
 .not_str:
   lea       rsi, [rsi + rdi * 8]                  ;
-  cmp       byte [r13 - 1], C_COM                 ;
-  jne       invalid_expression_err                ;
   movzx     rax, byte [r13]                       ;
   jmp       traverse_operands                     ;
 
