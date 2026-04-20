@@ -14,8 +14,11 @@ $(CASM_TARGET): $(CASM_SRC)
 	$(ASM) $< $@
 	chmod +x $@
 
+$(RM):
+	$(RM) $(CASM_TARGET)
+
 all: $(CASM_TARGET)
 
-clean: $(RM) $(BFI_TARGET) $(EMB_TARGET)
+clean: $(RM)
 
 .PHONY: all clean
