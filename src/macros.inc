@@ -130,7 +130,6 @@ O_WRONLY = 1
 O_CREAT  = 64
 O_APPEND = 1024
 O_TRUNC  = 512
-OC_744   = 0744o
 
 ; rwx flags
 R = 4
@@ -225,11 +224,10 @@ I_AND  = 9
 I_ADD  = 10
 I_XOR  = 11
 I_NOT  = 12
-I_NOP  = 13
-I_INT  = 14
-I_INC  = 15
-I_DEC  = 16
-I_SUB  = 17
+I_INT  = 13
+I_INC  = 14
+I_DEC  = 15
+I_SUB  = 16
 
 ; extended instructions (0x0F prefix in opcode)
 E_JE    = 0
