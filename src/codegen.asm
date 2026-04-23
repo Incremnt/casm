@@ -24,8 +24,9 @@ codegen:
   mov       rbx, qword [output_fd]            ; write elf header to the output file
   SYSCALL_3 SYS_WRITE, rbx, ehdr, EHSIZE      ;
 
-  lea       rcx, [rbp]                        ; write program headers
+  mov       rcx, rbp                          ; write program headers
   sub       rcx, qword [phdrbuf_ptr]          ;
+  mov       rbp, qword [phdrbuf_ptr]
   SYSCALL_3 SYS_WRITE, rbx, rbp, rcx          ;
 
   mov       rsi, qword [par_irbuf_ptr]        ; write opcodes
