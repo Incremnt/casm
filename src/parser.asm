@@ -87,6 +87,9 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_str:
+  lea       r12, [r12 + 2]                         ;
+  test      rbx, UNLIMSTR_BIT                      ; write all string if there was db directive
+  jnz       .write_all_str                         ;
   mov       rcx, 1                                 ; number with extra steps
   mov       rsi, 2                                 ;
   mov       rdi, 4                                 ;
@@ -94,7 +97,6 @@ ctrl_group:
   cmovnz    rcx, rsi                               ;
   test      rbx, IMM32_BIT                         ;
   cmovnz    rcx, rdi                               ;
-  lea       r12, [r12 + 2]                         ;
   lea       rdx, [r12 + rcx]                       ;
 .write_str:
   mov       al, byte [r12]                         ;
@@ -112,6 +114,15 @@ ctrl_group:
   jne       op_sz_not_match_err                    ; handle operand size error
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
+.write_all_str:
+  mov       al, byte [r12]                         ;
+  cmp       al, G_CTRL                             ;
+  je        skip_ir                                ;
+  mov       byte [r14], al                         ;
+  inc       r12                                    ;
+  inc       r14                                    ;
+  inc       r15d                                   ;
+  jmp       .write_all_str                         ;
 
 .handle_label:
 .handle_address:
@@ -332,6 +343,7 @@ dir_group:
 
 .handle_db:
   and       rbx, IMM8_BIT + PHFIRST_BIT               ; just set bits
+  or        rbx, UNLIMSTR_BIT                         ; set unlimited lenght to string (quality of life)
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
