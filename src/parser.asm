@@ -119,35 +119,36 @@ ctrl_group:
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                  ;
 
 .handle_mem:
-  mov       rbx, PLUS_BIT + MINUS_BIT + MUL_BIT + IMM32_BIT + IMM8_BIT   ;
+  and       rbx, PHFIRST_BIT                                             ;
+  or        rbx, PLUS_BIT + MINUS_BIT + MUL_BIT + IMM32_BIT + IMM8_BIT   ;
   lea       r12, [r12 + 2]                                               ;
   jmp       parse_ir                                                     ;
 
 .handle_mod_mem:
 
 .handle_mod_reg:
-  mov       rdx, r15
-  shr       rdx, 32
-  test      dl, 00000111b
-  jnz       .not_empty_rm
-  mov       dl, byte [r12 + 1]
-  shl       r15, 32
-  shr       r15, 32
-  shl       rdx, 32
-  add       r15, rdx
-  lea       r12, [r12 + 2]
-  jmp       parse_ir
+  mov       rdx, r15                               ;
+  shr       rdx, 32                                ;
+  test      dl, 00000111b                          ;
+  jnz       .not_empty_rm                          ;
+  or        dl, byte [r12 + 1]                     ; dl contains ModR/M byte, dh contains SIB
+  shl       r15, 32                                ;
+  shr       r15, 32                                ;
+  shl       rdx, 32                                ;
+  add       r15, rdx                               ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
 .not_empty_rm:
-  or        dl, 11000000b
-  mov       al, byte [r12 + 1]
-  shl       al, 3
-  or        dl, al
-  shl       r15, 32
-  shr       r15, 32
-  shl       rdx, 32
-  add       r15, rdx
-  lea       r12, [r12 + 2]
-  jmp       parse_ir
+  or        dl, 11000000b                          ;
+  mov       al, byte [r12 + 1]                     ;
+  shl       al, 3                                  ;
+  or        dl, al                                 ;
+  shl       r15, 32                                ;
+  shr       r15, 32                                ;
+  shl       rdx, 32                                ;
+  add       r15, rdx                               ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
 
 .handle_plus:
   test      rbx, PLUS_BIT                          ; yea just bits
@@ -175,11 +176,12 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_lf:
-  mov       rbx, INSTR_BIT + DIR_BIT               ; set instruction + directive bits
+  and       rbx, PHFIRST_BIT                       ;
+  or        rbx, INSTR_BIT + DIR_BIT               ; set instruction + directive bits
   mov       rdi, qword [modrm_ptr]                 ; write ModR/M byte
   mov       rdx, r15                               ;
   shr       rdx, 32                                ;
-  mov       byte [rdi], dl                         ;
+  or        byte [rdi], dl                         ;
   call      normal_mode                            ; restore handler labels after custom modes
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -288,11 +290,11 @@ traverse_operands:
   mov       al, byte [rsi + PAR_OP_OFF]               ; write opcode
   mov       di, word [rsi + PAR_NODEFLAGS_OFF]        ;
   mov       qword [modrm_ptr], modrm_ptr              ;
-  test      word [rsi + PAR_NODEFLAGS_OFF], SHORT_OP  ; handle node flags for opcodes (TODO: other opcode flags)
+  test      di, SHORT_OP                              ; handle node flags for opcodes (TODO: other opcode flags)
   jnz       .short                                    ;
-  test      word [rsi + PAR_NODEFLAGS_OFF], MODRM     ;
+  test      di, MODRM                                 ;
   jnz       .modrm                                    ;
-  jmp       .skip_flags                               ;
+  jmp       .skip_flags
 .short:
   add       al, byte [r12 + 1]                        ; short opcodes always have register as first operand btw
   jmp       .skip_flags                               ;
@@ -303,13 +305,26 @@ traverse_operands:
   dec       r14                                       ;
   mov       byte [r14], al                            ;
   lea       r14, [r14 + 2]                            ;
+  add       r15d, 2                                   ;
+  movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]        ;
+  and       rbx, PHFIRST_BIT                          ;
+  or        rbx, rsi                                  ;
+  test      di, OPNUM                                 ;
+  jz        parse_ir                                  ;
+  and       di, OPNUM                                 ;
+  bsr       di, di                                    ;
+  shl       di, 3                                     ;
+  or        di, 11000000b                             ;
+  mov       byte [r14 - 1], dil                       ;
   jmp       parse_ir                                  ;
 .skip_flags:
   mov       byte [r14], al                            ;
   inc       r14                                       ;
-  movzx     rbx, word [rsi + PAR_PARFLAGS_OFF]        ; go to operands logic
+  movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]        ;
+  and       rbx, PHFIRST_BIT                          ;
+  or        rbx, rsi                                  ;
   inc       r15d                                      ;
-  jmp       parse_ir                                  ;
+  jmp       parse_ir                                  ; go to operands logic
 
 dir_group:
   movzx     rax, byte [r12 + 1]                       ;
