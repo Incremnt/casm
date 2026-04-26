@@ -66,6 +66,8 @@ ctrl_group:
   jmp       parser_end                             ;
 
 .handle_num:
+  test      rbx, IMM_BIT                           ;
+  jz        invalid_expression_err                 ;
   mov       rcx, 1                                 ; write 1, 2 or 4 bytes of number
   mov       rdi, 2                                 ;
   mov       rsi, 4                                 ;
@@ -90,6 +92,8 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   test      rbx, UNLIMSTR_BIT                      ; write all string if there was db directive
   jnz       .write_all_str                         ;
+  test      rbx, IMM_BIT                           ;
+  jz        invalid_expression_err                 ;
   mov       rcx, 1                                 ; number with extra steps
   mov       rsi, 2                                 ;
   mov       rdi, 4                                 ;
@@ -140,6 +144,8 @@ ctrl_group:
 .handle_mod_reg:
   mov       rdx, r15                               ;
   shr       rdx, 32                                ;
+  test      rbx, REGFIRST_BIT                      ; some instructions need first register in reg field
+  jnz       .not_empty_rm                          ;
   test      dl, 00000111b                          ;
   jnz       .not_empty_rm                          ;
   or        dl, byte [r12 + 1]                     ; dl contains ModR/M byte, dh contains SIB
@@ -255,11 +261,11 @@ traverse_operands:
   jl        invalid_expression_err                 ;
   cmp       dil, C_DWORD                           ;
   jg        invalid_expression_err                 ;
-  test      word [rsi + PAR_NODEFLAGS_OFF], MEM    ; token trie needs node flags for memory and immediate
+  test      word [rsi + PAR_PARFLAGS_OFF], MEM_BIT ;
   jnz       .continue_traverse                     ;
   jmp       .go_to_sibling                         ;
 .cmp_num:
-  test      word [rsi + PAR_NODEFLAGS_OFF], IMM    ;
+  test      word [rsi + PAR_PARFLAGS_OFF], IMM_BIT ;
   jz        .go_to_sibling                         ;
 
 .continue_traverse:
@@ -342,18 +348,20 @@ dir_group:
   jmp       qword [dir_jmp_tbl + rax * 8]             ;
 
 .handle_db:
-  and       rbx, IMM8_BIT + PHFIRST_BIT               ; just set bits
-  or        rbx, UNLIMSTR_BIT                         ; set unlimited lenght to string (quality of life)
+  and       rbx, PHFIRST_BIT                          ; just set bits
+  or        rbx, UNLIMSTR_BIT + IMM8_BIT              ; set unlimited lenght to string (quality of life)
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
 .handle_dw:
-  and       rbx, IMM16_BIT + PHFIRST_BIT              ;
+  and       rbx, PHFIRST_BIT                          ;
+  or        rbx, IMM16_BIT                            ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
 .handle_dd:
-  and       rbx, IMM32_BIT + PHFIRST_BIT              ;
+  and       rbx, PHFIRST_BIT                          ;
+  or        rbx, IMM32_BIT                            ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
