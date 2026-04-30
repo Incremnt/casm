@@ -148,7 +148,8 @@ ctrl_group:
   jnz       .not_empty_rm                          ;
   test      dl, 00000111b                          ;
   jnz       .not_empty_rm                          ;
-  or        dl, byte [r12 + 1]                     ; dl contains ModR/M byte, dh contains SIB
+  mov       dl, byte [r12 + 1]                     ; dl contains ModR/M byte, dh contains SIB
+  or        dl, 11000000b                          ; set reg/reg mode (will be overwrited by memory anyways)
   shl       r15, 32                                ;
   shr       r15, 32                                ;
   shl       rdx, 32                                ;
