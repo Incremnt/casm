@@ -156,7 +156,7 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .not_empty_rm:
-  or        dl, 11000000b                          ;
+  or        dl, 11000000b                          ; set reg/reg mode
   mov       al, byte [r12 + 1]                     ;
   shl       al, 3                                  ;
   or        dl, al                                 ;
@@ -307,7 +307,19 @@ traverse_operands:
   mov       al, byte [rsi + PAR_OP_OFF]               ; write opcode
   mov       di, word [rsi + PAR_NODEFLAGS_OFF]        ;
   mov       qword [modrm_ptr], modrm_ptr              ;
-  test      di, SHORT_OP                              ; handle node flags for opcodes (TODO: other opcode flags)
+  test      di, OPSIZE                                ; handle prefix opcode flags
+  jz        .skip_opsize                              ;
+  mov       byte [r14], 0x66                          ;
+  inc       r14                                       ;
+  inc       r15d                                      ;
+.skip_opsize:
+  test      di, TWOBYTE                               ;
+  jz        .skip_twobyte                             ;
+  mov       byte [r14], 0x0F                          ;
+  inc       r14                                       ;
+  inc       r15d                                      ;
+.skip_twobyte:
+  test      di, SHORT_OP                              ; handle node flags for opcodes
   jnz       .short                                    ;
   test      di, MODRM                                 ;
   jnz       .modrm                                    ;
@@ -331,7 +343,7 @@ traverse_operands:
   and       di, OPNUM                                 ;
   bsr       di, di                                    ;
   shl       di, 3                                     ;
-  or        di, 11000000b                             ;
+  or        dil, 11000000b                            ;
   mov       byte [r14 - 1], dil                       ;
   jmp       parse_ir                                  ;
 .skip_flags:
@@ -417,7 +429,7 @@ dir_group:
   mov       qword [rbp + 24], rdx                     ;
   lea       rbp, [rbp + 32]                           ;
 .skip_write:
-  mov       rdx, r15                                  ; set phdr fields
+  mov       edx, r15d                                 ; set phdr fields
   mov       dword [phdr.offset], edx                  ;
   add       edx, dword [ehdr.entry]                   ;
   sub       edx, EHSIZE                               ;
