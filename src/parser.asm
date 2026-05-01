@@ -142,18 +142,18 @@ ctrl_group:
 .handle_mod_mem:
 
 .handle_mod_reg:
-  mov       rdx, r15                               ;
-  shr       rdx, 32                                ;
+  xor       rdx, rdx                               ;
   test      rbx, REGFIRST_BIT                      ; some instructions need first register in reg field
-  jnz       .not_empty_rm                          ;
-  test      dl, 00000111b                          ;
   jnz       .not_empty_rm                          ;
   mov       dl, byte [r12 + 1]                     ; dl contains ModR/M byte, dh contains SIB
   or        dl, 11000000b                          ; set reg/reg mode (will be overwrited by memory anyways)
+  mov       rdi, qword [modrm_ptr]                 ;
+  or        byte [rdi], dl                         ;
   shl       r15, 32                                ;
   shr       r15, 32                                ;
   shl       rdx, 32                                ;
   add       r15, rdx                               ;
+  or        rbx, REGFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .not_empty_rm:
@@ -161,6 +161,8 @@ ctrl_group:
   mov       al, byte [r12 + 1]                     ;
   shl       al, 3                                  ;
   or        dl, al                                 ;
+  mov       rdi, qword [modrm_ptr]                 ;
+  or        byte [rdi], dl                         ;
   shl       r15, 32                                ;
   shr       r15, 32                                ;
   shl       rdx, 32                                ;
@@ -196,10 +198,6 @@ ctrl_group:
 .handle_lf:
   and       rbx, PHFIRST_BIT                       ;
   or        rbx, INSTR_BIT + DIR_BIT               ; set instruction + directive bits
-  mov       rdi, qword [modrm_ptr]                 ; write ModR/M byte
-  mov       rdx, r15                               ;
-  shr       rdx, 32                                ;
-  or        byte [rdi], dl                         ;
   call      normal_mode                            ; restore handler labels after custom modes
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
