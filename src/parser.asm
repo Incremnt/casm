@@ -54,6 +54,10 @@ ctrl_group:
   pop       r11                                    ;
   lea       r11, [r11 * 2]                         ; expand by x2 more next time
 .skip_expand:
+  mov       edx, dword [phdr.filesz]               ;
+  add       dword [phdr.offset], edx               ;
+  mov       dword [phdr.filesz], r15d              ;
+  mov       dword [phdr.memsz], r15d               ;
   mov       rdx, qword [phdr]                      ; write phdr to phdr buffer
   mov       qword [rbp], rdx                       ;
   mov       rdx, qword [phdr + 8]                  ;
@@ -134,25 +138,20 @@ ctrl_group:
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                  ;
 
 .handle_mem:
-  and       rbx, PHFIRST_BIT                                             ;
-  or        rbx, PLUS_BIT + MINUS_BIT + MUL_BIT + IMM32_BIT + IMM8_BIT   ;
-  lea       r12, [r12 + 2]                                               ;
-  jmp       parse_ir                                                     ;
-
 .handle_mod_mem:
+.handle_byte:
+.handle_word:
+.handle_dword:
+  SYSCALL_3 SYS_WRITE, STDERR, e_unusedlbl_msg, E_UNUSEDLBL_MSG_SZ  ; first CASM versions don't support memory operations
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                  ;
 
 .handle_mod_reg:
-  xor       rdx, rdx                               ;
-  test      rbx, REGFIRST_BIT                      ; some instructions need first register in reg field
+  test      rbx, REGFIRST_BIT                      ;
   jnz       .not_empty_rm                          ;
-  mov       dl, byte [r12 + 1]                     ; dl contains ModR/M byte, dh contains SIB
+  mov       dl, byte [r12 + 1]                     ;
   or        dl, 11000000b                          ; set reg/reg mode (will be overwrited by memory anyways)
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
-  shl       r15, 32                                ;
-  shr       r15, 32                                ;
-  shl       rdx, 32                                ;
-  add       r15, rdx                               ;
   or        rbx, REGFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -163,10 +162,7 @@ ctrl_group:
   or        dl, al                                 ;
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
-  shl       r15, 32                                ;
-  shr       r15, 32                                ;
-  shl       rdx, 32                                ;
-  add       r15, rdx                               ;
+  xor       rbx, REGFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -202,33 +198,6 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
-.handle_byte:
-  test      rbx, MEM8_BIT                          ; CASM always need a keyword before memory expression
-  jz        invalid_expression_err                 ;
-  xor       rbx, MEM8_BIT                          ;
-  cmp       word [r12 + 2], C_MEM                  ;
-  jne       invalid_expression_err                 ;
-  lea       r12, [r12 + 2]                         ;
-  jmp       parse_ir                               ;
-
-.handle_word:
-  test      rbx, MEM16_BIT                         ;
-  jz        invalid_expression_err                 ;
-  xor       rbx, MEM16_BIT                         ;
-  cmp       word [r12 + 2], C_MEM                  ;
-  jne       invalid_expression_err                 ;
-  lea       r12, [r12 + 2]                         ;
-  jmp       parse_ir                               ;
-
-.handle_dword:
-  test      rbx, MEM32_BIT                         ;
-  jz        invalid_expression_err                 ;
-  xor       rbx, MEM32_BIT                         ;
-  cmp       word [r12 + 2], C_MEM                  ;
-  jne       invalid_expression_err                 ;
-  lea       r12, [r12 + 2]                         ;
-  jmp       parse_ir                               ;
-
 instr_group:
   test      rbx, INSTR_BIT                         ; traverse operands
   jz        invalid_expression_err                 ;
@@ -260,6 +229,8 @@ traverse_operands:
   jl        invalid_expression_err                 ;
   cmp       dil, C_DWORD                           ;
   jg        invalid_expression_err                 ;
+  SYSCALL_3 SYS_WRITE, STDERR, e_unusedlbl_msg, E_UNUSEDLBL_MSG_SZ ; first CASM versions don't support memory operations
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                 ;
   test      word [rsi + PAR_PARFLAGS_OFF], MEM_BIT ;
   jnz       .continue_traverse                     ;
   jmp       .go_to_sibling                         ;
@@ -378,31 +349,31 @@ dir_group:
 
 .handle_text:
   inc       word [ehdr.phnum]                         ;
+  add       dword [ehdr.entry], PHENTSIZE             ;
   mov       byte [phdr.flags], R + X                  ;
   test      rbx, PHFIRST_BIT                          ;
   jz        .write_phdr                               ;
-  add       dword [phdr.filesz], EHSIZE               ;
-  add       dword [phdr.memsz], EHSIZE                ;
+  add       r15d, EHSIZE                              ;
   xor       rbx, PHFIRST_BIT                          ;
   jmp       .skip_write                               ;
 
 .handle_data:
   inc       word [ehdr.phnum]                         ;
+  add       dword [ehdr.entry], PHENTSIZE             ;
   mov       byte [phdr.flags], R + W                  ;
   test      rbx, PHFIRST_BIT                          ;
   jz        .write_phdr                               ;
-  add       dword [phdr.filesz], EHSIZE               ;
-  add       dword [phdr.memsz], EHSIZE                ;
+  add       r15d, EHSIZE                              ;
   xor       rbx, PHFIRST_BIT                          ;
   jmp       .skip_write                               ;
 
 .handle_rodata:
   inc       word [ehdr.phnum]                         ;
+  add       dword [ehdr.entry], PHENTSIZE             ;
   mov       byte [phdr.flags], R                      ;
   test      rbx, PHFIRST_BIT                          ;
   jz        .write_phdr                               ;
-  add       dword [phdr.filesz], EHSIZE               ;
-  add       dword [phdr.memsz], EHSIZE                ;
+  add       r15d, EHSIZE                              ;
   xor       rbx, PHFIRST_BIT                          ;
   jmp       .skip_write                               ;
 
@@ -418,6 +389,10 @@ dir_group:
   pop       r11                                       ;
   lea       r11, [r11 * 2]                            ; expand by x2 more next time
 .skip_expand:
+  mov       edx, dword [phdr.filesz]                  ;
+  add       dword [phdr.offset], edx                  ;
+  mov       dword [phdr.filesz], r15d                 ;
+  mov       dword [phdr.memsz], r15d                  ;
   mov       rdx, qword [phdr]                         ; write phdr to phdr buffer
   mov       qword [rbp], rdx                          ;
   mov       rdx, qword [phdr + 8]                     ;
@@ -427,16 +402,18 @@ dir_group:
   mov       rdx, qword [phdr + 24]                    ;
   mov       qword [rbp + 24], rdx                     ;
   lea       rbp, [rbp + 32]                           ;
+  xor       r15, r15                                  ;
 .skip_write:
-  mov       edx, r15d                                 ; set phdr fields
-  mov       dword [phdr.offset], edx                  ;
+  mov       edx, dword [phdr.offset]                  ; set phdr fields
   add       edx, dword [ehdr.entry]                   ;
+  movzx     edi, word [ehdr.phnum]                    ;
+  imul      edi, edi, PHENTSIZE                       ;
+  sub       edx, edi                                  ;
   sub       edx, EHSIZE                               ;
+  add       edx, dword [phdr.filesz]                  ;
   mov       dword [phdr.vaddr], edx                   ;
   mov       dword [phdr.paddr], edx                   ;
-  add       dword [phdr.filesz], PHENTSIZE            ;
-  add       dword [phdr.memsz], PHENTSIZE             ;
-  add       dword [ehdr.entry], PHENTSIZE             ;
+  add       r15d, PHENTSIZE                           ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
