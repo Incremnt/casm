@@ -160,7 +160,7 @@ E_INVALID_EXPR_MSG_SZ = $ - e_invalid_expr_msg
 e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match.", ESC, '[0m', LF
 E_OP_SZ_MATCH_MSG_SZ  = $ - e_op_sz_match_msg
 
-e_unusedlbl_msg    db ESC, '[31m', "[Error]: First CASM versions don't support labels and addresses.", ESC, '[0m', LF
+e_unusedlbl_msg    db ESC, '[31m', "[Error]: First CASM versions don't support labels, memory operations and addresses.", ESC, '[0m', LF
 E_UNUSEDLBL_MSG_SZ    = $ - e_unusedlbl_msg
 
 ; pointers
