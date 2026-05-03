@@ -1,17 +1,8 @@
 .text
   xor       ebp, ebp
-  call      8
-dd 1
-dd 0
-  call      16
-db '|', 27, "[D"
-db '/', 27, "[D"
-db '-', 27, "[D"
-db '\', 27, "[D"
-
   mov       eax, 4
   mov       ebx, 1
-  pop       ecx
+  mov       ecx, 134512831
   add       ecx, ebp
   add       ebp, 4
   cmp       ebp, 16
@@ -21,9 +12,17 @@ db '\', 27, "[D"
   int       128
 
   mov       eax, 162
-  pop       ebx
+  mov       ebx, 134512823
   mov       ecx, ebx
   int       128
 
-  mov       edi, 134512726
+  mov       edi, 134512758
   jmp       edi
+
+.rodata
+dd 1
+dd 0
+db '|', 27, "[D"
+db '/', 27, "[D"
+db '-', 27, "[D"
+db '\', 27, "[D"
