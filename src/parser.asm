@@ -156,7 +156,7 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .not_empty_rm:
-  or        dl, 11000000b                          ; set reg/reg mode
+  mov       dl, 11000000b                          ; set reg/reg mode
   mov       al, byte [r12 + 1]                     ;
   shl       al, 3                                  ;
   or        dl, al                                 ;
