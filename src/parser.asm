@@ -92,6 +92,31 @@ ctrl_group:
   mov       r12, rdx                               ;
   jmp       parse_ir                               ;
 
+.handle_sib_num:
+  test      rbx, MULT_BIT                          ;
+  jnz       .write_scale                           ;
+  mov       edx, dword [r12 + 2]                   ;
+  mov       rdi, qword [sib_offset_ptr]            ;
+  add       edx, dword [rdi]                       ;
+  mov       dword [rdi], edx                       ;
+  lea       r12, [r12 + 6]                         ;
+  jmp       parse_ir                               ;
+.write_scale:
+  mov       ecx, dword [r12 + 2]                   ; error if scale number isn't 1, 2, 4 or 8
+  lea       edx, [ecx - 1]                         ;
+  test      ecx, edx                               ;
+  jnz       invalid_expression_err                 ;
+  bsr       ecx, ecx                               ;
+  cmp       ecx, 3                                 ;
+  jg        invalid_expression_err                 ;
+  mov       rdi, qword [sib_ptr]                   ;
+  and       byte [rdi], 00111111b                  ;
+  shl       cl, 6                                  ;
+  or        byte [rdi], cl                         ;
+  xor       rbx, MULT_BIT                          ;
+  lea       r12, [r12 + 6]                         ;
+  jmp       parse_ir                               ;
+
 .handle_str:
   lea       r12, [r12 + 2]                         ;
   test      rbx, UNLIMSTR_BIT                      ; write all string if there was db directive
@@ -132,58 +157,151 @@ ctrl_group:
   inc       r15d                                   ;
   jmp       .write_all_str                         ;
 
-.handle_label:
-.handle_address:
-  SYSCALL_3 SYS_WRITE, STDERR, e_unusedlbl_msg, E_UNUSEDLBL_MSG_SZ  ; first CASM versions don't support labels
-  SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                  ;
-
-.handle_mem:
-.handle_mod_mem:
-.handle_byte:
-.handle_word:
-.handle_dword:
-  SYSCALL_3 SYS_WRITE, STDERR, e_unusedlbl_msg, E_UNUSEDLBL_MSG_SZ  ; first CASM versions don't support memory operations
-  SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                  ;
+.handle_sib_str:
+  test      rbx, MULT_BIT                          ; string can contain only characters from 32 to 255
+  jnz       invalid_expression_err                 ;
+  xor       rcx, rcx                               ;
+  lea       r12, [r12 + 2]                         ;
+.check_strlen:
+  mov       ax, word [r12]                         ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_STR                              ;
+  je        .end_strlen_check                      ;
+  inc       r12                                    ;
+  inc       rcx                                    ;
+  jmp       .check_strlen                          ;
+.end_strlen_check:
+  cmp       ecx, 4                                 ;
+  jne       invalid_expression_err                 ;
+  mov       rdi, qword [sib_offset_ptr]            ;
+  mov       edx, dword [rdi]                       ;
+  add       edx, dword [r12 - 4]                   ;
+  mov       dword [rdi], edx                       ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
 
 .handle_mod_reg:
   test      rbx, REGFIRST_BIT                      ;
   jnz       .not_empty_rm                          ;
   mov       dl, byte [r12 + 1]                     ;
-  or        dl, 11000000b                          ; set reg/reg mode (will be overwrited by memory anyways)
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
   or        rbx, REGFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .not_empty_rm:
-  mov       dl, 11000000b                          ; set reg/reg mode
-  mov       al, byte [r12 + 1]                     ;
-  shl       al, 3                                  ;
-  or        dl, al                                 ;
+  mov       dl, byte [r12 + 1]                     ;
+  shl       dl, 3                                  ;
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
   xor       rbx, REGFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
-.handle_plus:
-  test      rbx, PLUS_BIT                          ; yea just bits
-  jz        invalid_expression_err                 ;
-  xor       rbx, PLUS_BIT                          ;
+.handle_sib_reg:
+  test      rbx, MULT_BIT                          ;
+  jnz       invalid_expression_err                 ;
+  mov       rdi, qword [modrm_ptr]                 ;
+  and       byte [rdi], 00111000b                  ; unset mod & r/m fields
+  or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
+  mov       dl, byte [r12 + 1]                     ;
+  cmp       dl, R32_EBP                            ; ebp register can be in index field only
+  je        .write_index                           ;
+  cmp       dl, R32_ESP                            ; esp register can be in base field only
+  je        .write_base                            ;
+  test      rbx, IDXFIRST_BIT                      ;
+  jnz       .write_index                           ;
+.write_base:
+  mov       rdi, qword [sib_ptr]                   ;
+  mov       dl, byte [rdi]                         ;
+  and       dl, 00000111b                          ;
+  cmp       dl, 00000101b                          ; 101 means no base (disp32)
+  jne       invalid_expression_err                 ;
+  mov       dl, byte [r12 + 1]                     ;
+  and       byte [rdi], 11111000b                  ; unset base field
+  or        byte [rdi], dl                         ;
+  or        rbx, IDXFIRST_BIT                      ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.write_index:
+  mov       rdi, qword [sib_ptr]                   ;
+  mov       dl, byte [rdi]                         ;
+  and       dl, 00111000b                          ;
+  cmp       dl, 00100000b                          ; 100 means no index
+  jne       invalid_expression_err                 ;
+  mov       dl, byte [r12 + 1]                     ;
+  shl       dl, 3                                  ;
+  and       byte [rdi], 11000111b                  ; unset index field
+  or        byte [rdi], dl                         ;
+  mov       rdx, IDXFIRST_BIT                      ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
-.handle_minus:
-  test      rbx, MINUS_BIT                         ;
+.handle_memstart:
+  push      rbx                                    ; save parser bits in stack
+  and       rbx, PHFIRST_BIT                       ;
+  or        rbx, IMM32_BIT                         ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+
+.handle_memend:
+  call      normal_mode                            ;
+  call      modrm_mode                             ;
+  pop       rbx                                    ; restore parser bits
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+
+.handle_byte:
+  call      sib_mode                               ;
+  cmp       byte [r12 + 2], G_CTRL                 ; CASM always need size keyword before memory expression
+  jne       invalid_expression_err                 ;
+  cmp       byte [r12 + 3], C_MEMST                ;
+  jne       invalid_expression_err                 ;
+  test      rbx, MEM8_BIT                          ;
   jz        invalid_expression_err                 ;
-  xor       rbx, MINUS_BIT                         ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+
+.handle_word:
+  call      sib_mode                               ;
+  cmp       byte [r12 + 2], G_CTRL                 ;
+  jne       invalid_expression_err                 ;
+  cmp       byte [r12 + 3], C_MEMST                ;
+  jne       invalid_expression_err                 ;
+  test      rbx, MEM16_BIT                         ;
+  jz        invalid_expression_err                 ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+
+.handle_dword:
+  call      sib_mode                               ;
+  cmp       byte [r12 + 2], G_CTRL                 ;
+  jne       invalid_expression_err                 ;
+  cmp       byte [r12 + 3], C_MEMST                ;
+  jne       invalid_expression_err                 ;
+  test      rbx, MEM32_BIT                         ;
+  jz        invalid_expression_err                 ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+
+.handle_label:
+.handle_address:
+  SYSCALL_3 SYS_WRITE, STDERR, e_unusedlbl_msg, E_UNUSEDLBL_MSG_SZ  ; first CASM versions don't support labels
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                  ;
+
+.handle_plus:
+  test      rbx, PLUS_BIT                          ; yea just bits
+  jnz       invalid_expression_err                 ;
+  or        rbx, PLUS_BIT                          ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
 .handle_mul:
-  test      rbx, MUL_BIT                           ;
-  jz        invalid_expression_err                 ;
-  xor       rbx, MUL_BIT                           ;
+  test      rbx, MULT_BIT                          ;
+  jnz       invalid_expression_err                 ;
+  or        rbx, MULT_BIT                          ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -204,7 +322,7 @@ instr_group:
   movzx     rax, byte [r12 + 1]                    ;
   mov       rsi, qword [instr_node_tbl + rax * 8]  ;
   lea       r12, [r12 + 2]                         ;
-  movzx     rax, byte [r12]                        ;
+  movzx     rax, word [r12]                        ;
   mov       r13, r12                               ;
   jmp       traverse_operands                      ;
 
@@ -214,23 +332,20 @@ einst_group:
   movzx     rax, byte [r12 + 1]                    ;
   mov       rsi, qword [einst_node_tbl + rax * 8]  ;
   lea       r12, [r12 + 2]                         ;
-  movzx     rax, byte [r12]                        ;
+  movzx     rax, word [r12]                        ;
   mov       r13, r12                               ;
 
 traverse_operands:
   cmp       al, G_CTRL                             ;
   jne       .continue_traverse                     ;
-  mov       dil, byte [r13 + 1]                    ;
-  cmp       dil, C_NUM                             ;
+  cmp       ah, C_NUM                              ;
   je        .cmp_num                               ;
-  cmp       dil, C_STR                             ;
+  cmp       ah, C_STR                              ;
   je        .cmp_num                               ;
-  cmp       dil, C_BYTE                            ;
+  cmp       ah, C_BYTE                             ;
   jl        invalid_expression_err                 ;
-  cmp       dil, C_DWORD                           ;
+  cmp       ah, C_DWORD                            ;
   jg        invalid_expression_err                 ;
-  SYSCALL_3 SYS_WRITE, STDERR, e_unusedlbl_msg, E_UNUSEDLBL_MSG_SZ ; first CASM versions don't support memory operations
-  SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                 ;
   test      word [rsi + PAR_PARFLAGS_OFF], MEM_BIT ;
   jnz       .continue_traverse                     ;
   jmp       .go_to_sibling                         ;
@@ -254,12 +369,37 @@ traverse_operands:
   movzx     rdi, byte [rsi + PAR_CHDOFF_OFF]       ; else, go to the child node
   test      di, di                                 ;
   jz        invalid_expression_err                 ;
-  lea       r13, [r13 + 4]                         ;
-  cmp       byte [r13 - 1], C_COM                  ;
-  jne       invalid_expression_err                 ;
+  lea       r13, [r13 + 2]                         ;
+  movzx     rax, word [r13]                        ;
+  xchg      ah, al                                 ; fix endianess
+  xor       rcx, rcx                               ;
+  mov       r8, 2                                  ;
+  cmp       ax, C_COM                              ; skip comma
+  cmove     rcx, r8                                ;
+  lea       r13, [r13 + rcx]                       ;
+  movzx     rax, word [r13]                        ;
+  xchg      ah, al                                 ;
+  cmp       ah, G_CTRL                             ;
+  jne       .not_ctrl                              ;
+  cmp       ax, C_BYTE                             ;
+  jl        .not_mem                               ;
+  cmp       ax, C_DWORD                            ;
+  jg        .not_mem                               ;
+  mov       r8, 4                                  ;
+  xor       rcx, rcx                               ;
+.skip_mem:
+  lea       r13, [r13 + rcx + 2]                   ;
+  xor       rcx, rcx                               ;
+  cmp       byte [r13], G_CTRL                     ;
+  jne       .skip_mem                              ;
+  cmp       byte [r13 + 1], C_NUM                  ;
+  cmove     rcx, r8                                ;
+  cmp       byte [r13 + 1], C_MEMEN                ;
+  jne       .skip_mem                              ;
+.not_mem:
   cmp       ax, C_NUM                              ;
   jne       .not_num                               ;
-  lea       r13, [r13 + 4]                         ; numbers and strings have longer token to skip
+  lea       r13, [r13 + 6]                         ;
 .not_num:
   cmp       ax, C_STR                              ;
   jne       .not_str                               ;
@@ -269,8 +409,12 @@ traverse_operands:
   cmp       byte [r13 - 1], C_STR                  ;
   jne       .skip_str                              ;
 .not_str:
+  xchg      al, ah                                 ;
   lea       rsi, [rsi + rdi * 8]                   ;
-  movzx     rax, byte [r13]                        ;
+  jmp       traverse_operands                      ;
+.not_ctrl:
+  movzx     rax, word [r13]                        ;
+  lea       rsi, [rsi + rdi * 8]                   ;
   jmp       traverse_operands                      ;
 
 .terminal:
@@ -293,7 +437,7 @@ traverse_operands:
   jnz       .short                                    ;
   test      di, MODRM                                 ;
   jnz       .modrm                                    ;
-  jmp       .skip_flags
+  jmp       .skip_flags                               ;
 .short:
   add       al, byte [r12 + 1]                        ; short opcodes always have register as first operand btw
   jmp       .skip_flags                               ;
@@ -301,6 +445,7 @@ traverse_operands:
   call      modrm_mode                                ;
   inc       r14                                       ;
   mov       qword [modrm_ptr], r14                    ;
+  mov       byte [r14], 11000000b                     ; set reg/reg mode (will be overwrited by memory handlers anyway)
   dec       r14                                       ;
   mov       byte [r14], al                            ;
   lea       r14, [r14 + 2]                            ;
@@ -309,12 +454,23 @@ traverse_operands:
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, rsi                                  ;
   test      di, OPNUM                                 ;
-  jz        parse_ir                                  ;
+  jz        .skip_opnum                               ;
   and       di, OPNUM                                 ;
   bsr       di, di                                    ;
   shl       di, 3                                     ;
-  or        dil, 11000000b                            ;
-  mov       byte [r14 - 1], dil                       ;
+  or        byte [r14 - 1], dil                       ;
+.skip_opnum:
+  test      di, SIB                                   ;
+  jz        parse_ir                                  ;
+  and       byte [r14 - 1], 00111111b                 ; reset mod
+  or        byte [r14 - 1], 10000100b                 ; set SIB + disp32 mode in ModR/M (other modes coming in optimization patch)
+  or        rbx, REGFIRST_BIT                         ;
+  mov       qword [sib_ptr], r14                      ;
+  mov       byte [r14], 00100101b                     ; set disp32 mode in SIB
+  inc       r14                                       ;
+  mov       qword [sib_offset_ptr], r14               ;
+  lea       r14, [r14 + 4]                            ;
+  add       r15d, 5                                   ;
   jmp       parse_ir                                  ;
 .skip_flags:
   mov       byte [r14], al                            ;
@@ -418,18 +574,34 @@ dir_group:
   jmp       parse_ir                                  ;
 
 modrm_mode:
-  mov       qword [ctrl_jmp_tbl + C_MEM * 8], ctrl_group.handle_mod_mem       ; modrm mode for ModR/M bytes
-  mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_mod_reg    ;
-  mov       qword [group_jmp_tbl + G_REG16 * 8], ctrl_group.handle_mod_reg    ;
-  mov       qword [group_jmp_tbl + G_REG8 * 8], ctrl_group.handle_mod_reg     ;
-  ret                                                                         ;
+  mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_mod_reg     ; modrm mode for ModR/M bytes
+  mov       qword [group_jmp_tbl + G_REG16 * 8], ctrl_group.handle_mod_reg     ;
+  mov       qword [group_jmp_tbl + G_REG8 * 8], ctrl_group.handle_mod_reg      ;
+  ret                                                                          ;
+
+sib_mode:
+  mov       qword [ctrl_jmp_tbl + C_MEMST * 8], ctrl_group.handle_memstart     ; sib mode for SIB bytes
+  mov       qword [ctrl_jmp_tbl + C_MEMEN * 8], ctrl_group.handle_memend       ;
+  mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_sib_reg     ;
+  mov       qword [group_jmp_tbl + G_REG16 * 8], invalid_expression_err        ;
+  mov       qword [group_jmp_tbl + G_REG8 * 8], invalid_expression_err         ;
+  mov       qword [ctrl_jmp_tbl + C_NUM * 8], ctrl_group.handle_sib_num        ;
+  mov       qword [ctrl_jmp_tbl + C_STR * 8], ctrl_group.handle_sib_str        ;
+  mov       qword [ctrl_jmp_tbl + C_COM * 8], invalid_expression_err           ;
+  mov       qword [ctrl_jmp_tbl + C_LF  * 8], invalid_expression_err           ;
+  ret                                                                          ;
 
 normal_mode:
-  mov       qword [ctrl_jmp_tbl + C_MEM * 8], ctrl_group.handle_mem           ; restore labels after memory mode
-  mov       qword [group_jmp_tbl + G_REG32 * 8], skip_ir                      ;
-  mov       qword [group_jmp_tbl + G_REG16 * 8], skip_ir                      ;
-  mov       qword [group_jmp_tbl + G_REG8 * 8], skip_ir                       ;
-  mov       qword [modrm_ptr], modrm_ptr                                      ;
-  ret                                                                         ;
+  mov       qword [ctrl_jmp_tbl + C_MEMST * 8], invalid_expression_err         ; restore labels after custom modes
+  mov       qword [ctrl_jmp_tbl + C_MEMEN * 8], invalid_expression_err         ;
+  mov       qword [group_jmp_tbl + G_REG32 * 8], skip_ir                       ;
+  mov       qword [group_jmp_tbl + G_REG16 * 8], skip_ir                       ;
+  mov       qword [group_jmp_tbl + G_REG8 * 8], skip_ir                        ;
+  mov       qword [ctrl_jmp_tbl + C_NUM * 8], ctrl_group.handle_num            ;
+  mov       qword [ctrl_jmp_tbl + C_STR * 8], ctrl_group.handle_str            ;
+  mov       qword [ctrl_jmp_tbl + C_COM * 8], ctrl_group.handle_comma          ;
+  mov       qword [ctrl_jmp_tbl + C_LF  * 8], ctrl_group.handle_lf             ;
+  mov       qword [modrm_ptr], modrm_ptr                                       ;
+  ret                                                                          ;
 
 parser_end = $
