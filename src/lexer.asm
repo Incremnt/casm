@@ -39,10 +39,9 @@ lexer:
   mov       byte [rbp + '9'], NUM_DEL      ;
   mov       byte [rbp + '"'], STR_DEL      ;
   mov       byte [rbp + "'"], STR_DEL      ;
-  mov       byte [rbp + '['], BRT_DEL      ;
-  mov       byte [rbp + ']'], BRT_DEL      ;
+  mov       byte [rbp + '['], LBR_DEL      ;
+  mov       byte [rbp + ']'], RBR_DEL      ;
   mov       byte [rbp + '+'], PLS_DEL      ;
-  mov       byte [rbp + '-'], MIN_DEL      ;
   mov       byte [rbp + '*'], MUL_DEL      ;
   mov       byte [rbp + ','], COM_DEL      ;
   mov       byte [rbp + LF ], LF_DEL       ;
@@ -195,20 +194,20 @@ handle_del:
   inc       r12
   jmp       write_long_del
 
-.bracket_del:
-  mov       si, C_MEM
+.lbracket_del:
+  mov       si, C_MEMST
+  jmp       write_del
+
+.rbracket_del:
+  mov       si, C_MEMEN
   jmp       write_del
 
 .plus_del:
-  mov       si, C_PLS
-  jmp       write_del
-
-.minus_del:
-  mov       si, C_MIN
+  mov       si, C_PLUS
   jmp       write_del
 
 .multiply_del:
-  mov       si, C_MUL
+  mov       si, C_MULT
   jmp       write_del
 
 .comma_del:
