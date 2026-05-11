@@ -93,6 +93,9 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_sib_num:
+  mov       rdx, PLUS_BIT                          ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
   test      rbx, MULT_BIT                          ;
   jnz       .write_scale                           ;
   mov       edx, dword [r12 + 2]                   ;
@@ -158,6 +161,9 @@ ctrl_group:
   jmp       .write_all_str                         ;
 
 .handle_sib_str:
+  mov       rdx, PLUS_BIT                          ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
   test      rbx, MULT_BIT                          ; string can contain only characters from 32 to 255
   jnz       invalid_expression_err                 ;
   xor       rcx, rcx                               ;
@@ -199,6 +205,9 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_sib_reg:
+  mov       rdx, PLUS_BIT                          ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
   test      rbx, MULT_BIT                          ;
   jnz       invalid_expression_err                 ;
   mov       ax, word [r12 + 2]                     ; write register to index field if next token is multiply token
