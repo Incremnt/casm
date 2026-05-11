@@ -201,6 +201,13 @@ ctrl_group:
 .handle_sib_reg:
   test      rbx, MULT_BIT                          ;
   jnz       invalid_expression_err                 ;
+  mov       ax, word [r12 + 2]                     ; write register to index field if next token is multiply token
+  xchg      ah, al                                 ;
+  mov       r8, IDXFIRST_BIT                       ;
+  xor       r9, r9                                 ;
+  cmp       ax, C_MULT                             ;
+  cmove     r9, r8                                 ;
+  or        rbx, r9                                ;
   mov       rdi, qword [modrm_ptr]                 ;
   and       byte [rdi], 00111000b                  ; unset mod & r/m fields
   or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
@@ -241,7 +248,6 @@ ctrl_group:
 
 .handle_memstart:
   push      rbx                                    ; save parser bits in stack
-  and       rbx, PHFIRST_BIT                       ;
   or        rbx, IMM32_BIT                         ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -369,39 +375,34 @@ traverse_operands:
   movzx     rdi, byte [rsi + PAR_CHDOFF_OFF]       ; else, go to the child node
   test      di, di                                 ;
   jz        invalid_expression_err                 ;
+  movzx     rax, word [r13]                        ;
+  cmp       al, G_CTRL                             ;
+  jne       .not_ctrl                              ;
+  cmp       ah, C_COM                              ;
+  jne       .not_comma                             ;
   lea       r13, [r13 + 2]                         ;
   movzx     rax, word [r13]                        ;
-  xchg      ah, al                                 ; fix endianess
-  xor       rcx, rcx                               ;
-  mov       r8, 2                                  ;
-  cmp       ax, C_COM                              ; skip comma
-  cmove     rcx, r8                                ;
-  lea       r13, [r13 + rcx]                       ;
-  movzx     rax, word [r13]                        ;
-  xchg      ah, al                                 ;
-  cmp       ah, G_CTRL                             ;
-  jne       .not_ctrl                              ;
-  cmp       ax, C_BYTE                             ;
+.not_comma:
+  cmp       ah, C_BYTE                             ;
   jl        .not_mem                               ;
-  cmp       ax, C_DWORD                            ;
+  cmp       ah, C_DWORD                            ;
   jg        .not_mem                               ;
-  mov       r8, 4                                  ;
-  xor       rcx, rcx                               ;
 .skip_mem:
-  lea       r13, [r13 + rcx + 2]                   ;
-  xor       rcx, rcx                               ;
-  cmp       byte [r13], G_CTRL                     ;
+  lea       r13, [r13 + 2]                         ;
+  cmp       byte [r13 - 2], G_CTRL                 ;
   jne       .skip_mem                              ;
-  cmp       byte [r13 + 1], C_NUM                  ;
-  cmove     rcx, r8                                ;
-  cmp       byte [r13 + 1], C_MEMEN                ;
+  cmp       byte [r13 - 1], C_NUM                  ;
+  jne       .skip_num_skip                         ;
+  lea       r13, [r13 + 4]
+.skip_num_skip:
+  cmp       byte [r13 - 1], C_MEMEN                ;
   jne       .skip_mem                              ;
 .not_mem:
-  cmp       ax, C_NUM                              ;
+  cmp       ah, C_NUM                              ;
   jne       .not_num                               ;
   lea       r13, [r13 + 6]                         ;
 .not_num:
-  cmp       ax, C_STR                              ;
+  cmp       ah, C_STR                              ;
   jne       .not_str                               ;
   lea       r13, [r13 + 2]                         ;
 .skip_str:
@@ -409,10 +410,23 @@ traverse_operands:
   cmp       byte [r13 - 1], C_STR                  ;
   jne       .skip_str                              ;
 .not_str:
-  xchg      al, ah                                 ;
+  mov       ax, word [r13]                         ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_COM                              ;
+  jne       .skip_comma2                           ;
+  lea       r13, [r13 + 2]                         ;
+.skip_comma2:
+  movzx     rax, word [r13]                        ;
   lea       rsi, [rsi + rdi * 8]                   ;
   jmp       traverse_operands                      ;
 .not_ctrl:
+  lea       r13, [r13 + 2]                         ;
+  mov       ax, word [r13]                         ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_COM                              ;
+  jne       .skip_comma3                           ;
+  lea       r13, [r13 + 2]                         ;
+.skip_comma3:
   movzx     rax, word [r13]                        ;
   lea       rsi, [rsi + rdi * 8]                   ;
   jmp       traverse_operands                      ;
@@ -420,7 +434,6 @@ traverse_operands:
 .terminal:
   mov       al, byte [rsi + PAR_OP_OFF]               ; write opcode
   mov       di, word [rsi + PAR_NODEFLAGS_OFF]        ;
-  mov       qword [modrm_ptr], modrm_ptr              ;
   test      di, OPSIZE                                ; handle prefix opcode flags
   jz        .skip_opsize                              ;
   mov       byte [r14], 0x66                          ;
@@ -455,10 +468,11 @@ traverse_operands:
   or        rbx, rsi                                  ;
   test      di, OPNUM                                 ;
   jz        .skip_opnum                               ;
-  and       di, OPNUM                                 ;
-  bsr       di, di                                    ;
-  shl       di, 3                                     ;
-  or        byte [r14 - 1], dil                       ;
+  mov       dx, di                                    ;
+  and       dx, OPNUM                                 ;
+  bsr       dx, dx                                    ;
+  shl       dx, 3                                     ;
+  or        byte [r14 - 1], dl                        ;
 .skip_opnum:
   test      di, SIB                                   ;
   jz        parse_ir                                  ;
