@@ -164,10 +164,12 @@ e_unusedlbl_msg    db ESC, '[31m', "[Error]: First CASM versions don't support l
 E_UNUSEDLBL_MSG_SZ    = $ - e_unusedlbl_msg
 
 ; pointers
-lex_irbuf_ptr dq 0
-par_irbuf_ptr dq 0
-phdrbuf_ptr   dq 0
-modrm_ptr     dq modrm_ptr
+lex_irbuf_ptr  dq 0
+par_irbuf_ptr  dq 0
+phdrbuf_ptr    dq 0
+modrm_ptr      dq 0
+sib_ptr        dq 0
+sib_offset_ptr dq 0
 
 ; file descriptors
 output_fd dq 0
@@ -219,9 +221,9 @@ del_jmp_tbl:
   dq handle_del.label_del
   dq handle_del.number_del
   dq handle_del.string_del
-  dq handle_del.bracket_del
+  dq handle_del.lbracket_del
+  dq handle_del.rbracket_del
   dq handle_del.plus_del
-  dq handle_del.minus_del
   dq handle_del.multiply_del
   dq handle_del.comma_del
   dq handle_del.newline_del
@@ -242,15 +244,15 @@ ctrl_jmp_tbl:
   dq ctrl_group.handle_str
   dq ctrl_group.handle_label
   dq ctrl_group.handle_address
-  dq ctrl_group.handle_mem
+  dq invalid_expression_err
+  dq invalid_expression_err
   dq ctrl_group.handle_plus
-  dq ctrl_group.handle_minus
   dq ctrl_group.handle_mul
   dq ctrl_group.handle_comma
   dq ctrl_group.handle_lf
-  dq skip_ir
-  dq skip_ir
-  dq skip_ir
+  dq ctrl_group.handle_byte
+  dq ctrl_group.handle_word
+  dq ctrl_group.handle_dword
 
 dir_jmp_tbl:
   dq dir_group.handle_db
@@ -442,6 +444,7 @@ lex_trie:
     LEX_NODE 'l', G_REG8, R8_DL, 0, 1, TERM
     LEX_NODE 'h', G_REG8, R8_DH, 0, 1, TERM
     LEX_NODE 'x', G_REG8, R16_DX, 0, 1, TERM
+    LEX_NODE 'i', G_REG8, R16_DI, 0, 1, TERM
     LEX_NODE 'b', G_DIR, D_DB, 0, 1, TERM
     LEX_NODE 'd', G_DIR, D_DD, 0, 1, TERM
     LEX_NODE 'w', G_DIR, D_DW, 1, 4, TERM
@@ -471,7 +474,6 @@ lex_trie:
   LEX_NODE 's', 0, 0, 1, 0, 0
     LEX_NODE 'u', 0, 0, 1, 2, 0
       LEX_NODE 'b', G_INSTR, I_SUB, 0, 0, TERM
-    LEX_NODE 'i', G_REG16, R16_SI, 0, 1, TERM
     LEX_NODE 'p', G_REG16, R16_SP, 0, 0, TERM
 
 ; token trie
@@ -481,10 +483,10 @@ par_trie:
     PAR_NODE G_CTRL, 0x8B, 0, 1, MEM32_BIT, MODRM + SIB + TERM
     PAR_NODE G_REG32, 0x89, 0, 1, 0, MODRM + TERM
     PAR_NODE G_CTRL, 0xB8, 0, 0, IMM32_BIT, SHORT_OP + TERM
-  PAR_NODE G_CTRL, 0x00, 1, 6, 0, 0
-    PAR_NODE G_REG32, 0x8B, 0, 1, MEM32_BIT, MODRM + SIB + TERM
-    PAR_NODE G_REG16, 0x8B, 0, 1, 0, MODRM + SIB + TERM
-    PAR_NODE G_REG8, 0x88, 0, 1, 0, MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 6, MEM_BIT, 0
+    PAR_NODE G_REG32, 0x89, 0, 1, MEM32_BIT, MODRM + SIB + TERM
+    PAR_NODE G_REG16, 0x89, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+    PAR_NODE G_REG8, 0x88, 0, 1, MEM8_BIT, MODRM + SIB + TERM
     PAR_NODE G_CTRL, 0xC7, 0, 1, IMM32_BIT, MODRM + SIB + TERM
     PAR_NODE G_CTRL, 0xC6, 0, 0, IMM8_BIT, MODRM + SIB + TERM
   PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
@@ -493,6 +495,7 @@ par_trie:
     PAR_NODE G_CTRL, 0xB8, 0, 0, IMM16_BIT, OPSIZE + SHORT_OP + TERM
   PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
     PAR_NODE G_REG8, 0x88, 0, 1, 0, MODRM + TERM
+    PAR_NODE G_CTRL, 0x8A, 0, 1, MEM8_BIT, MODRM + SIB + TERM
     PAR_NODE G_CTRL, 0xB0, 0, 0, IMM8_BIT, SHORT_OP + TERM
 
 .mul_node:
@@ -517,7 +520,7 @@ par_trie:
   PAR_NODE G_REG32, 0xFF, 0, 0, 0, MODRM + OPNUM3 + TERM
 
 .cmp_node:
-  PAR_NODE G_CTRL, 0x00, 1, 7, 0, 0
+  PAR_NODE G_CTRL, 0x00, 1, 7, MEM_BIT, 0
     PAR_NODE G_REG32, 0x39, 0, 1, MEM32_BIT, MODRM + SIB + TERM
     PAR_NODE G_REG8, 0x38, 0, 1, MEM8_BIT, MODRM + SIB + TERM
     PAR_NODE G_REG16, 0x39, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
@@ -543,7 +546,7 @@ par_trie:
   PAR_NODE G_REG32, 0xFF, 0, 0, 0, MODRM + OPNUM5 + TERM
 
 .test_node:
-  PAR_NODE G_CTRL, 0x00, 1, 4, 0, 0
+  PAR_NODE G_CTRL, 0x00, 1, 4, MEM_BIT, 0
     PAR_NODE G_REG32, 0x85, 0, 1, MEM32_BIT, MODRM + SIB + TERM
     PAR_NODE G_REG8, 0x84, 0, 1, MEM8_BIT, MODRM + SIB + TERM
     PAR_NODE G_REG16, 0x84, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
@@ -558,7 +561,7 @@ par_trie:
     PAR_NODE G_CTRL, 0xf7, 0, 0, IMM16_BIT, OPSIZE + MODRM + OPNUM1 + TERM
 
 .or_node:
-  PAR_NODE G_CTRL, 0x00, 1, 9, 0, 0
+  PAR_NODE G_CTRL, 0x00, 1, 9, MEM_BIT, 0
     PAR_NODE G_CTRL, 0x80, 0, 1, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM2 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + OPNUM2 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + OPNUM2 + TERM
@@ -583,7 +586,7 @@ par_trie:
     PAR_NODE G_REG16, 0x09, 0, 0, 0, OPSIZE + MODRM + TERM
 
 .and_node:
-  PAR_NODE G_CTRL, 0x00, 1, 9, 0, 0
+  PAR_NODE G_CTRL, 0x00, 1, 9, MEM_BIT, 0
     PAR_NODE G_CTRL, 0x80, 0, 1, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM5 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + OPNUM5 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + OPNUM5 + TERM
@@ -608,7 +611,7 @@ par_trie:
     PAR_NODE G_REG16, 0x21, 0, 0, 0, OPSIZE + MODRM + TERM
 
 .add_node:
-  PAR_NODE G_CTRL, 0x00, 1, 9, 0, 0
+  PAR_NODE G_CTRL, 0x00, 1, 9, MEM_BIT, 0
     PAR_NODE G_CTRL, 0x80, 0, 1, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM1 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + OPNUM1 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + OPNUM1 + TERM
@@ -633,7 +636,7 @@ par_trie:
     PAR_NODE G_REG16, 0x01, 0, 0, 0, OPSIZE + MODRM + TERM
 
 .xor_node:
-  PAR_NODE G_CTRL, 0x00, 1, 9, 0, 0
+  PAR_NODE G_CTRL, 0x00, 1, 9, MEM_BIT, 0
     PAR_NODE G_CTRL, 0x80, 0, 1, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM7 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + OPNUM7 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + OPNUM7 + TERM
@@ -681,7 +684,7 @@ par_trie:
   PAR_NODE G_REG32, 0x48, 0, 0, 0, SHORT_OP + TERM
 
 .sub_node:
-  PAR_NODE G_CTRL, 0x00, 1, 9, 0, 0
+  PAR_NODE G_CTRL, 0x00, 1, 9, MEM_BIT, 0
     PAR_NODE G_CTRL, 0x80, 0, 1, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM2 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + OPNUM2 + TERM
     PAR_NODE G_CTRL, 0x81, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + OPNUM5 + TERM
