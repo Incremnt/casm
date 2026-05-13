@@ -224,18 +224,31 @@ ctrl_group:
   cmove     r9, r8                                 ;
   or        rbx, r9                                ;
   mov       dl, byte [r12 + 1]                     ;
+  cmp       dl, R32_EBP                            ; change ModR/M to SIB + disp32
+  je        .set_modrm                             ;
   cmp       dl, R32_ESP                            ; esp register can be in base field only
   je        .write_base                            ;
   test      rbx, IDXFIRST_BIT                      ;
   jnz       .write_index                           ;
-  cmp       dl, R32_EBP                            ; change ModR/M to SIB + disp32
-  jne       .write_base                            ;
+  jmp       .write_base                            ;
 .set_modrm:
+  test      rbx, IDXFIRST_BIT                      ;
+  jz        .set_modrm_base                        ;
+  mov       rdi, qword [modrm_ptr]                 ;
+  and       byte [rdi], 00111000b                  ;
+  or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
+  mov       rdi, qword [sib_ptr]                   ;
+  and       byte [rdi], 11000111b                  ;
+  or        byte [rdi], 00101000b                  ; fill index field with ebp register
+  xor       rbx, IDXFIRST_BIT                      ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.set_modrm_base:
   test      rbx, BASFIRST_BIT                      ;
   jz        invalid_expression_err                 ;
   mov       rdi, qword [modrm_ptr]                 ;
   and       byte [rdi], 00111000b                  ;
-  or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
+  or        byte [rdi], 10000100b                  ;
   mov       rdi, qword [sib_ptr]                   ;
   or        byte [rdi], 00000101b                  ; fill base field with ebp register
   mov       rdx, BASFIRST_BIT                      ;
