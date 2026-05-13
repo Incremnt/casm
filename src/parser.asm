@@ -264,6 +264,9 @@ ctrl_group:
   mov       rdi, qword [sib_ptr]                   ;
   and       byte [rdi], 11111000b                  ; unset base field
   or        byte [rdi], dl                         ;
+  mov       rdi, qword [modrm_ptr]                 ;
+  and       byte [rdi], 00111000b                  ; unset mod & r/m fields
+  or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
   mov       rdx, BASFIRST_BIT                      ;
   not       rdx                                    ;
   and       rbx, rdx                               ;
