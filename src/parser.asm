@@ -205,6 +205,12 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_sib_reg:
+  test      rbx, PLUS_BIT                          ;
+  jnz       .skip_modset                           ;
+  mov       rdi, qword [modrm_ptr]                 ;
+  and       byte [rdi], 00111000b                  ; unset mod & r/m fields
+  or        byte [rdi], 00000100b                  ; set SIB mode
+.skip_modset:
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
   and       rbx, rdx                               ;
@@ -217,25 +223,37 @@ ctrl_group:
   cmp       ax, C_MULT                             ;
   cmove     r9, r8                                 ;
   or        rbx, r9                                ;
-  mov       rdi, qword [modrm_ptr]                 ;
-  and       byte [rdi], 00111000b                  ; unset mod & r/m fields
-  or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
   mov       dl, byte [r12 + 1]                     ;
-  cmp       dl, R32_EBP                            ; ebp register can be in index field only
-  je        .write_index                           ;
   cmp       dl, R32_ESP                            ; esp register can be in base field only
   je        .write_base                            ;
   test      rbx, IDXFIRST_BIT                      ;
   jnz       .write_index                           ;
-.write_base:
+  cmp       dl, R32_EBP                            ; change ModR/M to SIB + disp32
+  jne       .write_base                            ;
+.set_modrm:
+  test      rbx, BASFIRST_BIT                      ;
+  jz        invalid_expression_err                 ;
+  mov       rdi, qword [modrm_ptr]                 ;
+  and       byte [rdi], 00111000b                  ;
+  or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
   mov       rdi, qword [sib_ptr]                   ;
-  mov       dl, byte [rdi]                         ;
-  and       dl, 00000111b                          ;
-  cmp       dl, 00000101b                          ; 101 means no base (disp32)
-  jne       invalid_expression_err                 ;
+  or        byte [rdi], 00000101b                  ; fill base field with ebp register
+  mov       rdx, BASFIRST_BIT                      ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
+  or        rbx, IDXFIRST_BIT                      ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.write_base:
+  test      rbx, BASFIRST_BIT                      ;
+  jz        invalid_expression_err                 ;
   mov       dl, byte [r12 + 1]                     ;
+  mov       rdi, qword [sib_ptr]                   ;
   and       byte [rdi], 11111000b                  ; unset base field
   or        byte [rdi], dl                         ;
+  mov       rdx, BASFIRST_BIT                      ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
   or        rbx, IDXFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -257,7 +275,7 @@ ctrl_group:
 
 .handle_memstart:
   push      rbx                                    ; save parser bits in stack
-  or        rbx, IMM32_BIT                         ;
+  or        rbx, IMM32_BIT + BASFIRST_BIT          ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -502,7 +520,7 @@ traverse_operands:
   test      di, SIB                                   ;
   jz        parse_ir                                  ;
   and       byte [r14 - 1], 00111111b                 ; reset mod
-  or        byte [r14 - 1], 10000100b                 ; set SIB + disp32 mode in ModR/M (other modes coming in optimization patch)
+  or        byte [r14 - 1], 00000100b                 ; set SIB mode in ModR/M (disp32 defined in SIB)
   or        rbx, REGFIRST_BIT                         ;
   mov       qword [sib_ptr], r14                      ;
   mov       byte [r14], 00100101b                     ; set disp32 mode in SIB
