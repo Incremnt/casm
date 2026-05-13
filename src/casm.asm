@@ -280,6 +280,12 @@ instr_node_tbl:
   dq par_trie.inc_node
   dq par_trie.dec_node
   dq par_trie.sub_node
+  dq par_trie.lea_node
+  dq par_trie.xchg_node
+  dq par_trie.nop_node
+  dq par_trie.ret_node
+  dq par_trie.pusha_node
+  dq par_trie.popa_node
 
 einst_node_tbl:
   dq par_trie.je_node
@@ -360,9 +366,11 @@ lex_trie:
   LEX_NODE 'p', 0, 0, 1, 0, 0
     LEX_NODE 'u', 0, 0, 1, 3, 0
       LEX_NODE 's', 0, 0, 1, 0, 0
-        LEX_NODE 'h', G_INSTR, I_PUSH, 0, 0, TERM
+        LEX_NODE 'h', G_INSTR, I_PUSH, 1, 0, TERM
+          LEX_NODE 'a', G_INSTR, I_PUSHA, 0, 0, TERM
     LEX_NODE 'o', 0, 0, 1, 0, 0
-      LEX_NODE 'p', G_INSTR, I_POP, 0, 0, TERM
+      LEX_NODE 'p', G_INSTR, I_POP, 1, 0, TERM
+        LEX_NODE 'a', G_INSTR, I_POPA, 0, 0, TERM
 
 .c_node:
   LEX_NODE 'c', 0, 0, 1, 0, 0
@@ -425,13 +433,17 @@ lex_trie:
 
 .x_node:
   LEX_NODE 'x', 0, 0, 1, 0, 0
-    LEX_NODE 'o', 0, 0, 1, 0, 0
+    LEX_NODE 'o', 0, 0, 1, 2, 0
       LEX_NODE 'r', G_INSTR, I_XOR, 0, 0, TERM
+    LEX_NODE 'c', 0, 0, 1, 0, 0
+      LEX_NODE 'h', 0, 0, 1, 0, 0
+        LEX_NODE 'g', G_INSTR, I_XCHG, 0, 0, TERM
 
 .n_node:
   LEX_NODE 'n', 0, 0, 1, 0, 0
     LEX_NODE 'o', 0, 0, 1, 0, 0
-      LEX_NODE 't', G_INSTR, I_NOT, 0, 0, TERM
+      LEX_NODE 't', G_INSTR, I_NOT, 0, 1, TERM
+      LEX_NODE 'p', G_INSTR, I_NOP, 0, 0, TERM
 
 .i_node:
   LEX_NODE 'i', 0, 0, 1, 0, 0
@@ -475,6 +487,16 @@ lex_trie:
     LEX_NODE 'u', 0, 0, 1, 2, 0
       LEX_NODE 'b', G_INSTR, I_SUB, 0, 0, TERM
     LEX_NODE 'p', G_REG16, R16_SP, 0, 0, TERM
+
+.l_node:
+  LEX_NODE 'l', 0, 0, 1, 0, 0
+    LEX_NODE 'e', 0, 0, 1, 0, 0
+      LEX_NODE 'a', G_INSTR, I_LEA, 0, 0, TERM
+
+.r_node:
+  LEX_NODE 'r', 0, 0, 1, 0, 0
+    LEX_NODE 'e', 0, 0, 1, 0, 0
+      LEX_NODE 't', G_INSTR, I_RET, 0, 0, TERM
 
 ; token trie
 par_trie:
@@ -714,6 +736,36 @@ par_trie:
     PAR_NODE G_CTRL, 0x83, 0, 1, IMM8_BIT, OPSIZE + MODRM + OPNUM5 + TERM
     PAR_NODE G_CTRL, 0x2B, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
     PAR_NODE G_REG16, 0x29, 0, 0, 0, OPSIZE + MODRM + TERM
+
+.lea_node:
+  PAR_NODE G_REG32, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0x8D, 0, 0, MEM32_BIT, MODRM + SIB + TERM
+
+.xchg_node:
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG32, 0x87, 0, 0, 0, MODRM + TERM
+  PAR_NODE G_REG8, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG8, 0x86, 0, 0, 0, MODRM + TERM
+  PAR_NODE G_REG16, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG16, 0x87, 0, 0, 0, OPSIZE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 2, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0x87, 0, 0, MEM32_BIT, MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 2, MEM8_BIT, 0
+    PAR_NODE G_REG8, 0x86, 0, 0, MEM8_BIT, MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0x87, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+
+.nop_node:
+  PAR_NODE G_CTRL, 0x90, 0, 0, NOP_BIT, TERM
+
+.ret_node:
+  PAR_NODE G_CTRL, 0xC3, 0, 0, NOP_BIT, TERM
+
+.pusha_node:
+  PAR_NODE G_CTRL, 0x60, 0, 0, NOP_BIT, TERM
+
+.popa_node:
+  PAR_NODE G_CTRL, 0x61, 0, 0, NOP_BIT, TERM
 
 ; extended instructions
 .je_node:
