@@ -364,7 +364,7 @@ lex_trie:
 
 .p_node:
   LEX_NODE 'p', 0, 0, 1, 0, 0
-    LEX_NODE 'u', 0, 0, 1, 3, 0
+    LEX_NODE 'u', 0, 0, 1, 4, 0
       LEX_NODE 's', 0, 0, 1, 0, 0
         LEX_NODE 'h', G_INSTR, I_PUSH, 1, 0, TERM
           LEX_NODE 'a', G_INSTR, I_PUSHA, 0, 0, TERM
