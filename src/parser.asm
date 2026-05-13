@@ -357,6 +357,8 @@ traverse_operands:
   je        .cmp_num                                 ;
   cmp       ah, C_STR                                ;
   je        .cmp_num                                 ;
+  cmp       ah, C_LF                                 ;
+  je        .cmp_no_operand                          ;
   cmp       ah, C_BYTE                               ;
   jl        invalid_expression_err                   ;
   je        .cmp_mem8                                ;
@@ -376,6 +378,10 @@ traverse_operands:
   jmp       .go_to_sibling                           ;
 .cmp_num:
   test      word [rsi + PAR_PARFLAGS_OFF], IMM_BIT   ;
+  jnz       .continue_traverse                       ;
+  jmp       .go_to_sibling                           ;
+.cmp_no_operand:
+  test      word [rsi + PAR_PARFLAGS_OFF], NOP_BIT   ;
   jz        .go_to_sibling                           ;
 
 .continue_traverse:
