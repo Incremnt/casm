@@ -177,6 +177,7 @@ UNLIMSTR_BIT = 0x0800
 PHFIRST_BIT  = 0x1000
 REGFIRST_BIT = 0x2000
 IDXFIRST_BIT = 0x4000
+NOP_BIT      = 0x8000
 IMM_BIT      = IMM8_BIT + IMM16_BIT + IMM32_BIT
 MEM_BIT      = MEM8_BIT + MEM16_BIT + MEM32_BIT
 
@@ -214,23 +215,29 @@ D_DATA   = 4
 D_RODATA = 5
 
 ; instructions
-I_MOV  = 0
-I_MUL  = 1
-I_PUSH = 2
-I_POP  = 3
-I_CALL = 4
-I_CMP  = 5
-I_JMP  = 6
-I_TEST = 7
-I_OR   = 8
-I_AND  = 9
-I_ADD  = 10
-I_XOR  = 11
-I_NOT  = 12
-I_INT  = 13
-I_INC  = 14
-I_DEC  = 15
-I_SUB  = 16
+I_MOV   = 0
+I_MUL   = 1
+I_PUSH  = 2
+I_POP   = 3
+I_CALL  = 4
+I_CMP   = 5
+I_JMP   = 6
+I_TEST  = 7
+I_OR    = 8
+I_AND   = 9
+I_ADD   = 10
+I_XOR   = 11
+I_NOT   = 12
+I_INT   = 13
+I_INC   = 14
+I_DEC   = 15
+I_SUB   = 16
+I_LEA   = 17
+I_XCHG  = 18
+I_NOP   = 19
+I_RET   = 20
+I_PUSHA = 21
+I_POPA  = 22
 
 ; extended instructions (0x0F prefix in opcode)
 E_JE    = 0
