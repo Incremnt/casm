@@ -48,11 +48,11 @@ _start:
   SYSCALL_1 SYS_BRK, 0                                                     ; find current heap pointer
   lea       r12, [rax + 1]                                                 ; heap pointer in r12 (one byte before buffer for safety)
   push      rbp                                                            ;
+  lea       r14, [rbp + rax + 2]                                           ; IR buffer pointer in r14
   lea       rbp, [rbp + rax + LEX_IRBUF_SIZE + 2]                          ;
   SYSCALL_1 SYS_BRK, rbp                                                   ; allocate memory for file
   test      rax, rbp                                                       ;
   jz        brk_err                                                        ; handle brk error
-  lea       r14, [rbp + 1]                                                 ; IR buffer pointer in r14
   mov       qword [lex_irbuf_ptr], r14                                     ; save r14 in memory
   pop       rbp                                                            ;
 
