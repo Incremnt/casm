@@ -172,9 +172,11 @@ sib_ptr        dq 0
 sib_offset_ptr dq 0
 
 ; file descriptors
-output_fd dq 0
+output_fd  dq 0
 
 ; ELF stuff (first CASM versions is Linux x86 and load segments only)
+phdr_flags dd 0
+
 ehdr:
   .magic     db 0x7F, "ELF"
   .class     db EI_CLASS32
