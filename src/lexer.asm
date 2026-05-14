@@ -80,7 +80,7 @@ lexer:
   mov       byte [rcx + '['], VALID      ;
   mov       byte [rcx + ']'], VALID      ;
 
-  lea       r13, [LEX_IRBUF_SIZE * 2]    ; init pointers
+  mov       r13, LEX_IRBUF_SIZE          ; init pointers
   lea       r9, [r14 + r13 - 1]          ;
   mov       r15, lex_trie                ;
 
@@ -352,13 +352,6 @@ exp_ir_buf:
   ret                                        ;
 
 handle_eof:
-  cmp       r14, r9                          ; expand IR buffer by 2 bytes if it needs more space
-  jl        .write_eof                       ;
-  SYSCALL_1 SYS_BRK, 0                       ;
-  lea       rsi, [rax + 2]                   ;
-  SYSCALL_1 SYS_BRK, rsi                     ;
-.write_eof:
-  mov       byte [r14 + 1], C_EOF            ; write eof IR and end lexer
   lea       r14, [r14 + 2]                   ; r14 - pointer to parser IR buffer
   lea       rbp, [r14 + r13]                 ; rbp - pointer to phdr buffer
   lea       rsi, [r14 + r13 + PHDRBUF_SIZE]  ; allocate memory for parser IR buffer and phdr buffer
