@@ -54,6 +54,8 @@ ctrl_group:
   pop       r11                                    ;
   lea       r11, [r11 * 2]                         ; expand by x2 more next time
 .skip_expand:
+  mov       edx, dword [phdr_flags]                ;
+  mov       dword [phdr.flags], edx                ;
   mov       edx, dword [phdr.filesz]               ;
   add       dword [phdr.offset], edx               ;
   mov       dword [phdr.filesz], r15d              ;
@@ -577,9 +579,11 @@ dir_group:
   jmp       parse_ir                                  ;
 
 .handle_text:
+  mov       edx, dword [phdr_flags]                   ;
+  mov       dword [phdr.flags], edx                   ;
   inc       word [ehdr.phnum]                         ;
   add       dword [ehdr.entry], PHENTSIZE             ;
-  mov       byte [phdr.flags], R + X                  ;
+  mov       byte [phdr_flags], R + X                  ;
   test      rbx, PHFIRST_BIT                          ;
   jz        .write_phdr                               ;
   add       r15d, EHSIZE                              ;
@@ -587,9 +591,11 @@ dir_group:
   jmp       .skip_write                               ;
 
 .handle_data:
+  mov       edx, dword [phdr_flags]                   ;
+  mov       dword [phdr.flags], edx                   ;
   inc       word [ehdr.phnum]                         ;
   add       dword [ehdr.entry], PHENTSIZE             ;
-  mov       byte [phdr.flags], R + W                  ;
+  mov       byte [phdr_flags], R + W                  ;
   test      rbx, PHFIRST_BIT                          ;
   jz        .write_phdr                               ;
   add       r15d, EHSIZE                              ;
@@ -597,9 +603,11 @@ dir_group:
   jmp       .skip_write                               ;
 
 .handle_rodata:
+  mov       edx, dword [phdr_flags]                   ;
+  mov       dword [phdr.flags], edx                   ;
   inc       word [ehdr.phnum]                         ;
   add       dword [ehdr.entry], PHENTSIZE             ;
-  mov       byte [phdr.flags], R                      ;
+  mov       byte [phdr_flags], R                      ;
   test      rbx, PHFIRST_BIT                          ;
   jz        .write_phdr                               ;
   add       r15d, EHSIZE                              ;
