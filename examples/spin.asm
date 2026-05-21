@@ -1,22 +1,23 @@
 .text
   xor       ebp, ebp
-  call      24
+  jmp       24
 
 .rodata
-dd 1
-dd 0
-db '|', 27, "[D"
-db '/', 27, "[D"
-db '-', 27, "[D"
-db '\', 27, "[D"
+#time
+  dd 1
+  dd 0
+
+#frames
+  db '|', 27, "[D"
+  db '/', 27, "[D"
+  db '-', 27, "[D"
+  db '\', 27, "[D"
 
 .text
-  pop       esi
+#_start
   mov       eax, 4
   mov       ebx, 1
-  mov       ecx, esi
-  add       ecx, 8
-  add       ecx, ebp
+  lea       ecx, dword [@frames + ebp]
   add       ebp, 4
   cmp       ebp, 16
   jne       2
@@ -25,9 +26,9 @@ db '\', 27, "[D"
   int       128
 
   mov       eax, 162
-  mov       ebx, esi
+  mov       ebx, @time
   mov       ecx, ebx
   int       128
 
-  mov       edi, 134512790
+  mov       edi, @_start
   jmp       edi
