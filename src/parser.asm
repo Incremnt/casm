@@ -423,6 +423,8 @@ ctrl_group:
   jne       .next_label                            ;
   lea       r13, [r13 + 5]                         ;
   mov       r12, r8                                ;
+  cmp       byte [r13], 0                          ;
+  je        undef_lbl_err                          ;
   jmp       .compare_label                         ;
 
 .handle_sib_address:
@@ -577,6 +579,16 @@ traverse_operands:
   jne       .skip_num_skip                         ;
   lea       r13, [r13 + 4]
 .skip_num_skip:
+  cmp       byte [r13 - 1], C_ADR                  ;
+  jne       .skip_address_skip                     ;
+.skip_address:
+  mov       dx, word [r13]                         ;
+  inc       r13                                    ;
+  xchg      dh, dl                                 ;
+  cmp       dx, C_ADR                              ;
+  jne       .skip_address                          ;
+  inc       r13
+.skip_address_skip:
   cmp       byte [r13 - 1], C_MEMEN                ;
   jne       .skip_mem                              ;
 .not_mem:
@@ -592,6 +604,13 @@ traverse_operands:
   cmp       byte [r13 - 1], C_STR                  ;
   jne       .skip_str                              ;
 .not_str:
+  cmp       ah, C_ADR                              ;
+  jne       .not_address                           ;
+.skip_address2:
+  inc       r13                                    ;
+  cmp       byte [r13 - 1], C_ADR                  ;
+  jne       .skip_address2                         ;
+.not_address:
   mov       ax, word [r13]                         ;
   xchg      ah, al                                 ;
   cmp       ax, C_COM                              ;
