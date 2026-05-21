@@ -1,7 +1,3 @@
-.text
-  xor       ebp, ebp
-  jmp       24
-
 .rodata
 #time
   dd 1
@@ -15,6 +11,9 @@
 
 .text
 #_start
+  xor       ebp, ebp
+
+#draw_loop
   mov       eax, 4
   mov       ebx, 1
   lea       ecx, dword [@frames + ebp]
@@ -30,5 +29,7 @@
   mov       ecx, ebx
   int       128
 
-  mov       edi, @_start
+  mov       edi, @draw_loop
   jmp       edi
+
+.entry @_start
