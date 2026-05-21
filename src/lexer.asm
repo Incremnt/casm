@@ -262,6 +262,14 @@ write_long_del:
   je        .end_write                       ;
   cmp       byte [rbp + rax], COM_DEL        ;
   je        .end_write                       ;
+  cmp       byte [rbp + rax], RBR_DEL        ;
+  je        .end_write                       ;
+  cmp       byte [rbp + rax], LBR_DEL        ;
+  je        .end_write                       ;
+  cmp       byte [rbp + rax], PLS_DEL        ;
+  je        .end_write                       ;
+  cmp       byte [rbp + rax], MUL_DEL        ;
+  je        .end_write                       ;
   cmp       byte [rbp + rax], IGN_DEL        ;
   jne       .write_insides                   ;
 .end_write:
