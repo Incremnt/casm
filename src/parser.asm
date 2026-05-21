@@ -41,6 +41,11 @@ ctrl_group:
   jmp       qword [ctrl_jmp_tbl + rax * 8]         ;
 
 .handle_eof:
+  cmp       dword [custom_entry], 0                ;
+  je        .default_entry                         ;
+  mov       edi, dword [custom_entry]              ;
+  mov       dword [ehdr.entry], edi                ;
+.default_entry:
   test      rbx, PHFIRST_BIT                       ;
   jnz       parser_end                             ;
   cmp       rbp, r11                               ;
@@ -74,6 +79,13 @@ ctrl_group:
 .handle_num:
   test      rbx, IMM_BIT                           ;
   jz        invalid_expression_err                 ;
+  test      rbx, ENTRY_BIT                         ;
+  jz        .not_custom_entry                      ;
+  mov       edi, dword [r12 + 2]                   ;
+  mov       dword [custom_entry], edi              ;
+  lea       r12, [r12 + 6]                         ;
+  jmp       parse_ir                               ;
+.not_custom_entry:
   mov       rcx, 1                                 ; write 1, 2 or 4 bytes of number
   mov       rdi, 2                                 ;
   mov       rsi, 4                                 ;
@@ -391,6 +403,13 @@ ctrl_group:
   jne       .compare_label                         ;
   cmp       byte [r13], 0                          ;
   jne       .next_label                            ;
+  test      rbx, ENTRY_BIT                         ;
+  jz        .not_entry                             ;
+  mov       edi, dword [r13 + 1]                   ;
+  mov       dword [custom_entry], edi              ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.not_entry:
   mov       edi, dword [r13 + 1]                   ;
   mov       dword [r14], edi                       ;
   lea       r14, [r14 + 4]                         ;
@@ -720,6 +739,18 @@ dir_group:
   add       r15d, EHSIZE                              ;
   xor       rbx, PHFIRST_BIT                          ;
   jmp       .skip_write                               ;
+
+.handle_entry:
+  mov       ax, word [r12 + 2]                        ;
+  xchg      ah, al                                    ;
+  cmp       ax, C_ADR                                 ;
+  je        .valid                                    ;
+  cmp       ax, C_NUM                                 ;
+  jne       invalid_expression_err                    ;
+.valid:
+  or        rbx, IMM32_BIT + ENTRY_BIT                ;
+  lea       r12, [r12 + 2]                            ;
+  jmp       parse_ir                                  ;
 
 .write_phdr:
   cmp       rbp, r11                                  ;
