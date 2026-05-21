@@ -104,8 +104,8 @@ traverse:
   lea       r15, [r15 + rdx * 8]              ; else, go to the sibling node
   jmp       traverse                          ;
 .char_matches:
-  cmp       byte [r15 + LEX_TERM_OFF], TERM   ; potentially write IR if node is terminal
-  je        terminal                          ;
+  test      byte [r15 + LEX_FLAGS_OFF], TERM  ; potentially write IR if node is terminal
+  jnz       terminal                          ;
   inc       r12                               ;
   movzx     rax, byte [r12]                   ; next lexeme char in rax
   mov       dx, word [r15 + LEX_CHDOFF_OFF]   ; go to the child node
@@ -133,8 +133,8 @@ chd_traverse:
   lea       r15, [r15 + rdx * 8]              ; else, go to the sibling node
   jmp       chd_traverse                      ;
 .chd_char_matches:
-  cmp       byte [r15 + LEX_TERM_OFF], TERM   ; write IR if node is terminal
-  je        terminal                          ;
+  test      byte [r15 + LEX_FLAGS_OFF], TERM  ; write IR if node is terminal
+  jnz       terminal                          ;
   inc       r12                               ; next lexeme character in al
   mov       al, byte [r12]                    ;
   mov       dx, word [r15 + LEX_CHDOFF_OFF]   ; go to the child node
@@ -157,6 +157,10 @@ write_ir:
   jl        .skip_call                        ;
   call      exp_ir_buf                        ;
 .skip_call:
+  test      byte [r15 + LEX_FLAGS_OFF], PHDR  ;
+  jz        .not_segment                      ;
+  add       dword [current_ptr], PHENTSIZE    ;
+.not_segment:
   mov       si, word [r15 + LEX_IR_OFF]       ; write IR to the IR buffer
   mov       word [r14], si                    ;
   lea       r14, [r14 + 2]                    ;
@@ -252,8 +256,15 @@ write_long_del:
   inc       r14                              ;
   inc       r12                              ;
   movzx     rax, byte [r12]                  ;
-  cmp       byte [rbp + rax], DELIM          ; end write loop if found delimiter
-  jl        .write_insides                   ;
+  cmp       byte [rbp + rax], LF_DEL         ; end write loop if found skip delimiter
+  je        .end_write                       ;
+  cmp       byte [rbp + rax], CMT_DEL        ;
+  je        .end_write                       ;
+  cmp       byte [rbp + rax], COM_DEL        ;
+  je        .end_write                       ;
+  cmp       byte [rbp + rax], IGN_DEL        ;
+  jne       .write_insides                   ;
+.end_write:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
   jl        .skip_call3                      ;
   call      exp_ir_buf                       ;
@@ -352,10 +363,12 @@ exp_ir_buf:
   ret                                        ;
 
 handle_eof:
-  lea       r14, [r14 + 2]                   ; r14 - pointer to parser IR buffer
-  lea       rbp, [r14 + r13]                 ; rbp - pointer to phdr buffer
-  lea       rsi, [r14 + r13 + PHDRBUF_SIZE]  ; allocate memory for parser IR buffer and phdr buffer
-  SYSCALL_1 SYS_BRK, rsi                     ;
-  mov       qword [phdrbuf_ptr], rbp         ; save phdr buffer pointer
+  lea       r14, [r14 + 2]                       ; r14 - pointer to parser IR buffer
+  lea       rbp, [r14 + r13 * 4]                 ; rbp - pointer to phdr buffer
+  lea       rsi, [r14 + r13 * 4 + PHDRBUF_SIZE]  ; allocate memory for parser IR buffer and phdr buffer
+  SYSCALL_1 SYS_BRK, rsi                         ;
+  mov       qword [phdrbuf_ptr], rbp             ; save phdr buffer pointer
+  lea       rsi, [r14 + r13]                     ; save label buffer pointer
+  mov       qword [labelbuf_ptr], rsi            ;
 
 lexer_end = $
