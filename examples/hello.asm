@@ -1,13 +1,14 @@
 .text
-  call      14
+  jmp       14
 
 .rodata
-db "Hello, World!", 10
+#msg
+  db "Hello, World!", 10
 
 .text
   mov       eax, 4
   mov       ebx, 1
-  pop       ecx
+  mov       ecx, @msg
   mov       edx, 14
   int       128
 
