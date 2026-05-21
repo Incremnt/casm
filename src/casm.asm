@@ -121,6 +121,10 @@ op_sz_not_match_err:
   SYSCALL_3 SYS_WRITE, STDERR, e_op_sz_match_msg, E_OP_SZ_MATCH_MSG_SZ
   jmp       err_exit
 
+undef_lbl_err:
+  SYSCALL_3 SYS_WRITE, STDERR, e_undef_lbl_msg, E_UNDEF_LBL_MSG_SZ
+  jmp       err_exit
+
 err_exit:
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
@@ -160,16 +164,18 @@ E_INVALID_EXPR_MSG_SZ = $ - e_invalid_expr_msg
 e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match.", ESC, '[0m', LF
 E_OP_SZ_MATCH_MSG_SZ  = $ - e_op_sz_match_msg
 
-e_unusedlbl_msg    db ESC, '[31m', "[Error]: First CASM versions don't support labels and addresses.", ESC, '[0m', LF
-E_UNUSEDLBL_MSG_SZ    = $ - e_unusedlbl_msg
+e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label.", ESC, '[0m', LF
+E_UNDEF_LBL_MSG_SZ    = $ - e_undef_lbl_msg
 
 ; pointers
 lex_irbuf_ptr  dq 0
 par_irbuf_ptr  dq 0
 phdrbuf_ptr    dq 0
+labelbuf_ptr   dq 0
 modrm_ptr      dq 0
 sib_ptr        dq 0
 sib_offset_ptr dq 0
+current_ptr    dd 0x08048034
 
 ; file descriptors
 output_fd  dq 0
@@ -325,17 +331,17 @@ lex_trie:
     LEX_NODE 't', 0, 0, 1, 4, 0
       LEX_NODE 'e', 0, 0, 1, 0, 0
         LEX_NODE 'x', 0, 0, 1, 0, 0
-          LEX_NODE 't', G_DIR, D_TEXT, 0, 0, TERM
+          LEX_NODE 't', G_DIR, D_TEXT, 0, 0, PHDR + TERM
     LEX_NODE 'd', 0, 0, 1, 4, 0
       LEX_NODE 'a', 0, 0, 1, 0, 0
         LEX_NODE 't', 0, 0, 1, 0, 0
-          LEX_NODE 'a', G_DIR, D_DATA, 0, 0, TERM
+          LEX_NODE 'a', G_DIR, D_DATA, 0, 0, PHDR + TERM
     LEX_NODE 'r', 0, 0, 1, 0, 0
       LEX_NODE 'o', 0, 0, 1, 0, 0
         LEX_NODE 'd', 0, 0, 1, 0, 0
           LEX_NODE 'a', 0, 0, 1, 0, 0
             LEX_NODE 't', 0, 0, 1, 0, 0
-              LEX_NODE 'a', G_DIR, D_RODATA, 0, 0, TERM
+              LEX_NODE 'a', G_DIR, D_RODATA, 0, 0, PHDR + TERM
 
 .e_node:
   LEX_NODE 'e', 0, 0, 1, 0, 0
