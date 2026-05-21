@@ -181,7 +181,8 @@ current_ptr    dd 0x08048034
 output_fd  dq 0
 
 ; ELF stuff (first CASM versions is Linux x86 and load segments only)
-phdr_flags dd 0
+custom_entry dd 0
+phdr_flags   dd 0
 
 ehdr:
   .magic     db 0x7F, "ELF"
@@ -269,6 +270,7 @@ dir_jmp_tbl:
   dq dir_group.handle_text
   dq dir_group.handle_data
   dq dir_group.handle_rodata
+  dq dir_group.handle_entry
 
 instr_node_tbl:
   dq par_trie.mov_node
@@ -336,12 +338,17 @@ lex_trie:
       LEX_NODE 'a', 0, 0, 1, 0, 0
         LEX_NODE 't', 0, 0, 1, 0, 0
           LEX_NODE 'a', G_DIR, D_DATA, 0, 0, PHDR + TERM
-    LEX_NODE 'r', 0, 0, 1, 0, 0
+    LEX_NODE 'r', 0, 0, 1, 6, 0
       LEX_NODE 'o', 0, 0, 1, 0, 0
         LEX_NODE 'd', 0, 0, 1, 0, 0
           LEX_NODE 'a', 0, 0, 1, 0, 0
             LEX_NODE 't', 0, 0, 1, 0, 0
               LEX_NODE 'a', G_DIR, D_RODATA, 0, 0, PHDR + TERM
+    LEX_NODE 'e', 0, 0, 1, 0, TERM
+      LEX_NODE 'n', 0, 0, 1, 0, TERM
+        LEX_NODE 't', 0, 0, 1, 0, TERM
+          LEX_NODE 'r', 0, 0, 1, 0, TERM
+            LEX_NODE 'y', G_DIR, D_ENTRY, 0, 0, TERM
 
 .e_node:
   LEX_NODE 'e', 0, 0, 1, 0, 0
