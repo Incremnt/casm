@@ -38,13 +38,13 @@ macro SYSCALL_1 num, arg1 {
   syscall
 }
 
-macro LEX_NODE char, ir_group, ir, child_offset, sibling_offset, is_terminal {
+macro LEX_NODE char, ir_group, ir, child_offset, sibling_offset, flags {
   db char
   db ir_group
   db ir
   dw child_offset
   dw sibling_offset
-  db is_terminal
+  db flags
 }
 
 macro PAR_NODE ir_group, opcode, child_offset, sibling_offset, parser_flags, node_flags {
@@ -89,7 +89,7 @@ PT_LOAD     = 1
 LEX_IR_OFF     = 1
 LEX_CHDOFF_OFF = 3
 LEX_SIBOFF_OFF = 5
-LEX_TERM_OFF   = 7
+LEX_FLAGS_OFF  = 7
 
 ; parser trie node offsets
 PAR_OP_OFF        = 1
@@ -100,6 +100,10 @@ PAR_NODEFLAGS_OFF = 6
 
 ; bool constants
 VALID    = 1
+
+; lexer trie bits
+TERM     = 0x01
+PHDR     = 0x02
 
 ; parser trie bits
 TERM     = 0x0001
@@ -172,7 +176,7 @@ IMM32_BIT    = 0x0040
 MEM8_BIT     = 0x0080
 MEM16_BIT    = 0x0100
 MEM32_BIT    = 0x0200
-ADDR_BIT     = 0x0400
+LABEL_BIT    = 0x0400
 UNLIMSTR_BIT = 0x0800
 PHFIRST_BIT  = 0x1000
 REGFIRST_BIT = 0x2000
