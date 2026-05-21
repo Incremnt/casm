@@ -1,4 +1,4 @@
-# Cool Assembler v0.1.1
+# Cool Assembler v1.0.0
 A small learning x86 assembler written in FASM.
 
 ## License
@@ -9,6 +9,5 @@ See the [`LICENSE`](LICENSE) file for the full text.
 To build the CASM, you need **FASM** ([build from the source](https://github.com/tgrysztar/fasm) or [download from the official website](https://flatassembler.net)).
 
 ## Footguns
-1.  **Entry point at the first segment.**
-2.  **Decimal numbers only.**
-3.  **Label define can be before its address only.**
+1.  **Decimal numbers only.**
+2.  **Label define can be before its address only.**
