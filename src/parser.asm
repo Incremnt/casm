@@ -418,9 +418,11 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .next_label:
-  inc       r13                                    ;
   cmp       byte [r13], 0                          ;
-  jne       .next_label                            ;
+  je        .found_next                            ;
+  inc       r13                                    ;
+  jmp       .next_label                            ;
+.found_next:
   lea       r13, [r13 + 5]                         ;
   mov       r12, r8                                ;
   cmp       byte [r13], 0                          ;
@@ -454,9 +456,11 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .sib_next_label:
-  inc       r13                                    ;
   cmp       byte [r13], 0                          ;
-  jne       .sib_next_label                        ;
+  je        .sib_found_next                        ;
+  inc       r13                                    ;
+  jmp       .sib_next_label                        ;
+.sib_found_next:
   lea       r13, [r13 + 5]                         ;
   mov       r12, r8                                ;
   jmp       .sib_compare_label                     ;
