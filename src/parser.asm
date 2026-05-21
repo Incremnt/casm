@@ -22,11 +22,11 @@
 ;================================;
 
 parser:
-  mov       rbx, INSTR_BIT + DIR_BIT + PHFIRST_BIT ; rbx - parser bit mask (expected tokens and one phdr bit)
-  mov       r12, qword [lex_irbuf_ptr]             ; r12 - token buffer pointer
-  xor       r15, r15                               ; r15 - address & special byte register (offset in elf headers, instruction addresses and SIB or ModR/M)
-  lea       r11, [rbp + PHDRBUF_SIZE]              ; r11 - how much memory need phdr buffer (x2 after expand)
-  mov       qword [par_irbuf_ptr], r14             ; save parser IR buffer start pointer
+  mov       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT + PHFIRST_BIT ; rbx - parser bit mask (expected tokens and other)
+  mov       r12, qword [lex_irbuf_ptr]                         ; r12 - token buffer pointer
+  xor       r15, r15                                           ; r15 - offset in elf headers
+  lea       r11, [rbp + PHDRBUF_SIZE]                          ; r11 - how much memory need phdr buffer (x2 after expand)
+  mov       qword [par_irbuf_ptr], r14                         ; save parser IR buffer start pointer
 
 parse_ir:
   movzx     rax, byte [r12]                        ; handle token group
@@ -87,6 +87,7 @@ ctrl_group:
   mov       al, byte [r12]                         ;
   mov       byte [r14], al                         ;
   inc       r15d                                   ;
+  inc       dword [current_ptr]                    ;
   inc       r14                                    ;
   inc       r12                                    ;
   dec       rcx                                    ;
@@ -140,6 +141,7 @@ ctrl_group:
   mov       al, byte [r12]                         ;
   mov       byte [r14], al                         ;
   inc       r15d                                   ;
+  inc       dword [current_ptr]                    ;
   inc       r12                                    ;
   inc       r14                                    ;
   dec       rcx                                    ;
@@ -160,6 +162,7 @@ ctrl_group:
   inc       r12                                    ;
   inc       r14                                    ;
   inc       r15d                                   ;
+  inc       dword [current_ptr]                    ;
   jmp       .write_all_str                         ;
 
 .handle_sib_str:
@@ -338,9 +341,104 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_label:
+  test      rbx, LABEL_BIT                         ;
+  jz        invalid_expression_err                 ;
+  xor       rbx, LABEL_BIT                         ;
+  mov       r13, qword [labelbuf_ptr]              ;
+  lea       r12, [r12 + 2]                         ;
+  mov       rdi, 1                                 ;
+.find_slot:
+  cmp       byte [r13], 0                          ;
+  je        .skip_address                          ;
+  inc       r13                                    ;
+  xor       rdi, rdi                               ;
+  jmp       .find_slot                             ;
+.skip_address:
+  cmp       rdi, 1                                 ; don't skip 32-bit address if label isn't first
+  je        .write_label                           ;
+  lea       r13, [r13 + 5]                         ;
+  cmp       byte [r13], 0                          ;
+  jne       .find_slot                             ;
+.write_label:
+  mov       al, byte [r12]                         ;
+  mov       byte [r13], al                         ;
+  cmp       byte [r12 + 2], C_LBL                  ;
+  je        .end_label_write                       ;
+  inc       r12                                    ;
+  inc       r13                                    ;
+  jmp       .write_label                           ;
+.end_label_write:
+  lea       r12, [r12 + 3]                         ;
+  mov       edi, dword [current_ptr]               ;
+  mov       dword [r13 + 2], edi                   ;
+  jmp       parse_ir                               ;
+
 .handle_address:
-  SYSCALL_3 SYS_WRITE, STDERR, e_unusedlbl_msg, E_UNUSEDLBL_MSG_SZ  ; first CASM versions don't support labels
-  SYSCALL_1 SYS_EXIT, EXIT_FAILURE                                  ;
+  test      rbx, IMM32_BIT                         ;
+  jz        invalid_expression_err                 ;
+  lea       r12, [r12 + 2]                         ;
+  mov       r8, r12                                ;
+  mov       r13, qword [labelbuf_ptr]              ;
+  cmp       byte [r13], 0                          ;
+  je        undef_lbl_err                          ;
+.compare_label:
+  mov       al, byte [r12]                         ;
+  cmp       byte [r13], al                         ;
+  jne       .next_label                            ;
+  inc       r12                                    ;
+  inc       r13                                    ;
+  cmp       byte [r12], G_CTRL                     ;
+  jne       .compare_label                         ;
+  cmp       byte [r13], 0                          ;
+  jne       .next_label                            ;
+  mov       edi, dword [r13 + 1]                   ;
+  mov       dword [r14], edi                       ;
+  lea       r14, [r14 + 4]                         ;
+  lea       r15d, [r15d + 4]                       ;
+  add       dword [current_ptr], 4                 ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.next_label:
+  inc       r13                                    ;
+  cmp       byte [r13], 0                          ;
+  jne       .next_label                            ;
+  lea       r13, [r13 + 5]                         ;
+  mov       r12, r8                                ;
+  jmp       .compare_label                         ;
+
+.handle_sib_address:
+  test      rbx, MULT_BIT                          ;
+  jnz       invalid_expression_err                 ;
+  mov       rdx, PLUS_BIT                          ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
+  lea       r12, [r12 + 2]                         ;
+  mov       r8, r12                                ;
+  mov       r13, qword [labelbuf_ptr]              ;
+  cmp       byte [r13], 0                          ;
+  je        undef_lbl_err                          ;
+.sib_compare_label:
+  mov       al, byte [r12]                         ;
+  cmp       byte [r13], al                         ;
+  jne       .sib_next_label                        ;
+  inc       r12                                    ;
+  inc       r13                                    ;
+  cmp       byte [r12], G_CTRL                     ;
+  jne       .sib_compare_label                     ;
+  cmp       byte [r13], 0                          ;
+  jne       .sib_next_label                        ;
+  mov       esi, dword [r13 + 1]                   ;
+  mov       rdi, qword [sib_offset_ptr]            ;
+  add       dword [rdi], esi                       ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.sib_next_label:
+  inc       r13                                    ;
+  cmp       byte [r13], 0                          ;
+  jne       .sib_next_label                        ;
+  lea       r13, [r13 + 5]                         ;
+  mov       r12, r8                                ;
+  jmp       .sib_compare_label                     ;
 
 .handle_plus:
   test      rbx, PLUS_BIT                          ; yea just bits
@@ -362,7 +460,7 @@ ctrl_group:
 
 .handle_lf:
   and       rbx, PHFIRST_BIT                       ;
-  or        rbx, INSTR_BIT + DIR_BIT               ; set instruction + directive bits
+  or        rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ; set instruction + directive + label bits
   call      normal_mode                            ; restore handler labels after custom modes
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -370,6 +468,7 @@ ctrl_group:
 instr_group:
   test      rbx, INSTR_BIT                         ; traverse operands
   jz        invalid_expression_err                 ;
+  xor       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ;
   movzx     rax, byte [r12 + 1]                    ;
   mov       rsi, qword [instr_node_tbl + rax * 8]  ;
   lea       r12, [r12 + 2]                         ;
@@ -380,6 +479,7 @@ instr_group:
 einst_group:
   test      rbx, INSTR_BIT                         ; like normal instructions
   jz        invalid_expression_err                 ;
+  xor       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ;
   movzx     rax, byte [r12 + 1]                    ;
   mov       rsi, qword [einst_node_tbl + rax * 8]  ;
   lea       r12, [r12 + 2]                         ;
@@ -390,6 +490,8 @@ traverse_operands:
   cmp       al, G_CTRL                               ;
   jne       .continue_traverse                       ;
   cmp       ah, C_NUM                                ;
+  je        .cmp_num                                 ;
+  cmp       ah, C_ADR                                ;
   je        .cmp_num                                 ;
   cmp       ah, C_STR                                ;
   je        .cmp_num                                 ;
@@ -500,12 +602,14 @@ traverse_operands:
   mov       byte [r14], 0x66                          ;
   inc       r14                                       ;
   inc       r15d                                      ;
+  inc       dword [current_ptr]                       ;
 .skip_opsize:
   test      di, TWOBYTE                               ;
   jz        .skip_twobyte                             ;
   mov       byte [r14], 0x0F                          ;
   inc       r14                                       ;
   inc       r15d                                      ;
+  inc       dword [current_ptr]                       ;
 .skip_twobyte:
   test      di, SHORT_OP                              ; handle node flags for opcodes
   jnz       .short                                    ;
@@ -524,6 +628,7 @@ traverse_operands:
   mov       byte [r14], al                            ;
   lea       r14, [r14 + 2]                            ;
   add       r15d, 2                                   ;
+  add       dword [current_ptr], 2                    ;
   movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]        ;
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, rsi                                  ;
@@ -546,6 +651,7 @@ traverse_operands:
   mov       qword [sib_offset_ptr], r14               ;
   lea       r14, [r14 + 4]                            ;
   add       r15d, 5                                   ;
+  add       dword [current_ptr], 5                    ;
   jmp       parse_ir                                  ;
 .skip_flags:
   mov       byte [r14], al                            ;
@@ -554,6 +660,7 @@ traverse_operands:
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, rsi                                  ;
   inc       r15d                                      ;
+  inc       dword [current_ptr]                       ;
   jmp       parse_ir                                  ; go to operands logic
 
 dir_group:
@@ -667,6 +774,7 @@ sib_mode:
   mov       qword [group_jmp_tbl + G_REG16 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], invalid_expression_err         ;
   mov       qword [ctrl_jmp_tbl + C_NUM * 8], ctrl_group.handle_sib_num        ;
+  mov       qword [ctrl_jmp_tbl + C_ADR * 8], ctrl_group.handle_sib_address    ;
   mov       qword [ctrl_jmp_tbl + C_STR * 8], ctrl_group.handle_sib_str        ;
   mov       qword [ctrl_jmp_tbl + C_COM * 8], invalid_expression_err           ;
   mov       qword [ctrl_jmp_tbl + C_LF  * 8], invalid_expression_err           ;
@@ -679,6 +787,7 @@ normal_mode:
   mov       qword [group_jmp_tbl + G_REG16 * 8], skip_ir                       ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], skip_ir                        ;
   mov       qword [ctrl_jmp_tbl + C_NUM * 8], ctrl_group.handle_num            ;
+  mov       qword [ctrl_jmp_tbl + C_ADR * 8], ctrl_group.handle_address        ;
   mov       qword [ctrl_jmp_tbl + C_STR * 8], ctrl_group.handle_str            ;
   mov       qword [ctrl_jmp_tbl + C_COM * 8], ctrl_group.handle_comma          ;
   mov       qword [ctrl_jmp_tbl + C_LF  * 8], ctrl_group.handle_lf             ;
