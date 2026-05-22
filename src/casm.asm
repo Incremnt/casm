@@ -172,17 +172,19 @@ lex_irbuf_ptr  dq 0
 par_irbuf_ptr  dq 0
 phdrbuf_ptr    dq 0
 labelbuf_ptr   dq 0
+deladrbuf_ptr  dq 0
 modrm_ptr      dq 0
 sib_ptr        dq 0
 sib_offset_ptr dq 0
+deladr_offset  dq 0
 current_ptr    dd 0x08048034
 
 ; file descriptors
 output_fd  dq 0
 
 ; ELF stuff (first CASM versions is Linux x86 and load segments only)
-custom_entry dd 0
-phdr_flags   dd 0
+custom_entry      dd 0
+phdr_flags        dd 0
 
 ehdr:
   .magic     db 0x7F, "ELF"
