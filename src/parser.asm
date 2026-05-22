@@ -41,8 +41,44 @@ ctrl_group:
   jmp       qword [ctrl_jmp_tbl + rax * 8]         ;
 
 .handle_eof:
+  mov       rdi, qword [deladrbuf_ptr]             ;
+  push      r14                                    ;
+.next_deladdr:
+  mov       r13, qword [labelbuf_ptr]              ;
+  mov       r12, qword [rdi]                       ;
+  mov       r14, qword [rdi + 8]                   ;
+  mov       r8, r12                                ;
+.write_del_addr:
+  cmp       qword [rdi], 0                         ;
+  je        .end_deladr_write                      ;
+  mov       al, byte [r12]                         ;
+  cmp       byte [r13], al                         ;
+  jne       .sec_next_label                        ;
+  inc       r12                                    ;
+  inc       r13                                    ;
+  cmp       byte [r12], G_CTRL                     ;
+  jne       .write_del_addr                        ;
+  cmp       byte [r13], 0                          ;
+  jne       .sec_next_label                        ;
+  mov       esi, dword [r13 + 1]                   ;
+  add       dword [r14], esi                       ;
+  add       rdi, 16                                ;
+  jmp       .next_deladdr                          ;
+.sec_next_label:
+  cmp       byte [r13], 0                          ;
+  je        .sec_found_next                        ;
+  inc       r13                                    ;
+  jmp       .sec_next_label                        ;
+.sec_found_next:
+  lea       r13, [r13 + 5]                         ;
+  mov       r12, r8                                ;
+  cmp       byte [r13], 0                          ;
+  je        undef_lbl_err                          ;
+  jmp       .write_del_addr                        ;
+.end_deladr_write:
+  pop       r14                                    ;
   cmp       dword [custom_entry], 0                ;
-  je        .default_entry                         ;
+  je        .default_entry                         ; write custom entry if there was .entry directive
   mov       edi, dword [custom_entry]              ;
   mov       dword [ehdr.entry], edi                ;
 .default_entry:
@@ -392,7 +428,7 @@ ctrl_group:
   mov       r8, r12                                ;
   mov       r13, qword [labelbuf_ptr]              ;
   cmp       byte [r13], 0                          ;
-  je        undef_lbl_err                          ;
+  je        .delayed_addr                          ;
 .compare_label:
   mov       al, byte [r12]                         ;
   cmp       byte [r13], al                         ;
@@ -426,8 +462,26 @@ ctrl_group:
   lea       r13, [r13 + 5]                         ;
   mov       r12, r8                                ;
   cmp       byte [r13], 0                          ;
-  je        undef_lbl_err                          ;
+  je        .delayed_addr                          ;
   jmp       .compare_label                         ;
+.delayed_addr:
+  test      rbx, ENTRY_BIT                         ;
+  jnz       undef_lbl_err                          ;
+  mov       rdi, qword [deladrbuf_ptr]             ;
+  add       rdi, qword [deladr_offset]             ;
+  mov       qword [rdi], r12                       ;
+  mov       qword [rdi + 8], r14                   ;
+  add       qword [deladr_offset], 16              ;
+  lea       r14, [r14 + 4]                         ;
+  add       qword [current_ptr], 4                 ;
+  add       r15d, 4                                ;
+.del_skip_adr:
+  mov       ax, word [r12]                         ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_ADR                              ;
+  je        skip_ir                                ;
+  inc       r12                                    ;
+  jmp       .del_skip_adr                          ;
 
 .handle_sib_address:
   test      rbx, MULT_BIT                          ;
@@ -439,7 +493,7 @@ ctrl_group:
   mov       r8, r12                                ;
   mov       r13, qword [labelbuf_ptr]              ;
   cmp       byte [r13], 0                          ;
-  je        undef_lbl_err                          ;
+  je        .sib_deladdr                           ;
 .sib_compare_label:
   mov       al, byte [r12]                         ;
   cmp       byte [r13], al                         ;
@@ -463,7 +517,23 @@ ctrl_group:
 .sib_found_next:
   lea       r13, [r13 + 5]                         ;
   mov       r12, r8                                ;
+  cmp       byte [r13], 0                          ;
+  je        .sib_deladdr                           ;
   jmp       .sib_compare_label                     ;
+.sib_deladdr:
+  mov       rdi, qword [deladrbuf_ptr]             ;
+  add       rdi, qword [deladr_offset]             ;
+  mov       qword [rdi], r12                       ;
+  mov       rsi, qword [sib_offset_ptr]            ;
+  mov       qword [rdi + 8], rsi                   ;
+  add       qword [deladr_offset], 16              ;
+.sib_del_skip:
+  mov       ax, word [r12]                         ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_ADR                              ;
+  je        skip_ir                                ;
+  inc       r12                                    ;
+  jmp       .sib_del_skip                          ;
 
 .handle_plus:
   test      rbx, PLUS_BIT                          ; yea just bits
