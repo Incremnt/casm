@@ -99,6 +99,10 @@ ctrl_group:
   mov       dword [phdr.flags], edx                ;
   mov       edx, dword [phdr.filesz]               ;
   add       dword [phdr.offset], edx               ;
+  cmp       qword [phdrbuf_ptr], rbp               ;
+  je        .first_segment                         ;
+  sub       r15d, PHENTSIZE                        ;
+.first_segment:
   mov       dword [phdr.filesz], r15d              ;
   mov       dword [phdr.memsz], r15d               ;
   mov       rdx, qword [phdr]                      ; write phdr to phdr buffer
@@ -798,49 +802,58 @@ dir_group:
   jmp       parse_ir                                  ;
 
 .handle_text:
-  mov       edx, dword [phdr_flags]                   ;
-  mov       dword [phdr.flags], edx                   ;
-  inc       word [ehdr.phnum]                         ;
-  add       dword [ehdr.entry], PHENTSIZE             ;
-  mov       byte [phdr_flags], R + X                  ;
-  test      rbx, PHFIRST_BIT                          ;
-  jz        .write_phdr                               ;
-  add       r15d, EHSIZE                              ;
-  xor       rbx, PHFIRST_BIT                          ;
-  jmp       .skip_write                               ;
+  mov       rdi, qword [phdrbuf_ptr]                    ;
+  add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
+  add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
+  mov       edx, dword [phdr_flags]                     ;
+  mov       dword [phdr.flags], edx                     ;
+  inc       word [ehdr.phnum]                           ;
+  add       dword [ehdr.entry], PHENTSIZE               ;
+  mov       byte [phdr_flags], R + X                    ;
+  test      rbx, PHFIRST_BIT                            ;
+  jz        .write_phdr                                 ;
+  add       r15d, EHSIZE + PHENTSIZE                    ;
+  xor       rbx, PHFIRST_BIT                            ;
+  jmp       .skip_write                                 ;
 
 .handle_data:
-  mov       edx, dword [phdr_flags]                   ;
-  mov       dword [phdr.flags], edx                   ;
-  inc       word [ehdr.phnum]                         ;
-  add       dword [ehdr.entry], PHENTSIZE             ;
-  mov       byte [phdr_flags], R + W                  ;
-  test      rbx, PHFIRST_BIT                          ;
-  jz        .write_phdr                               ;
-  add       r15d, EHSIZE                              ;
-  xor       rbx, PHFIRST_BIT                          ;
-  jmp       .skip_write                               ;
+  mov       rdi, qword [phdrbuf_ptr]                    ;
+  add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
+  add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
+  mov       edx, dword [phdr_flags]                     ;
+  mov       dword [phdr.flags], edx                     ;
+  inc       word [ehdr.phnum]                           ;
+  add       dword [ehdr.entry], PHENTSIZE               ;
+  mov       byte [phdr_flags], R + W                    ;
+  test      rbx, PHFIRST_BIT                            ;
+  jz        .write_phdr                                 ;
+  add       r15d, EHSIZE + PHENTSIZE                    ;
+  xor       rbx, PHFIRST_BIT                            ;
+  jmp       .skip_write                                 ;
 
 .handle_rodata:
-  mov       edx, dword [phdr_flags]                   ;
-  mov       dword [phdr.flags], edx                   ;
-  inc       word [ehdr.phnum]                         ;
-  add       dword [ehdr.entry], PHENTSIZE             ;
-  mov       byte [phdr_flags], R                      ;
-  test      rbx, PHFIRST_BIT                          ;
-  jz        .write_phdr                               ;
-  add       r15d, EHSIZE                              ;
-  xor       rbx, PHFIRST_BIT                          ;
-  jmp       .skip_write                               ;
+  mov       rdi, qword [phdrbuf_ptr]                    ;
+  add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
+  add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
+  mov       edx, dword [phdr_flags]                     ;
+  mov       dword [phdr.flags], edx                     ;
+  inc       word [ehdr.phnum]                           ;
+  add       dword [ehdr.entry], PHENTSIZE               ;
+  mov       byte [phdr_flags], R                        ;
+  test      rbx, PHFIRST_BIT                            ;
+  jz        .write_phdr                                 ;
+  add       r15d, EHSIZE + PHENTSIZE                    ;
+  xor       rbx, PHFIRST_BIT                            ;
+  jmp       .skip_write                                 ;
 
 .handle_entry:
   mov       ax, word [r12 + 2]                        ;
   xchg      ah, al                                    ;
   cmp       ax, C_ADR                                 ;
-  je        .valid                                    ;
+  je        .valid_entry                              ;
   cmp       ax, C_NUM                                 ;
   jne       invalid_expression_err                    ;
-.valid:
+.valid_entry:
   or        rbx, IMM32_BIT + ENTRY_BIT                ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
@@ -859,8 +872,22 @@ dir_group:
 .skip_expand:
   mov       edx, dword [phdr.filesz]                  ;
   add       dword [phdr.offset], edx                  ;
+  cmp       qword [phdrbuf_ptr], rbp                  ;
+  je        .first_segment                            ;
+  sub       r15d, PHENTSIZE                           ;
+.first_segment:
   mov       dword [phdr.filesz], r15d                 ;
   mov       dword [phdr.memsz], r15d                  ;
+  mov       rcx, qword [phdrbuf_ptr]                  ;
+  add       rcx, PHENTSIZE                            ;
+  cmp       rbp, rcx                                  ;
+  jne       .skip_vaddr_fix                           ;
+  movzx     ecx, word [ehdr.phnum]                    ;
+  imul      ecx, ecx, PHENTSIZE                       ;
+  add       dword [phdr.vaddr], ecx                   ;
+  add       dword [phdr.paddr], ecx                   ;
+  add       dword [phdr.offset], ecx                  ;
+.skip_vaddr_fix:
   mov       rdx, qword [phdr]                         ; write phdr to phdr buffer
   mov       qword [rbp], rdx                          ;
   mov       rdx, qword [phdr + 8]                     ;
