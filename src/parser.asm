@@ -883,6 +883,7 @@ dir_group:
   cmp       rbp, rcx                                  ;
   jne       .skip_vaddr_fix                           ;
   movzx     ecx, word [ehdr.phnum]                    ;
+  dec       ecx                                       ;
   imul      ecx, ecx, PHENTSIZE                       ;
   add       dword [phdr.vaddr], ecx                   ;
   add       dword [phdr.paddr], ecx                   ;
