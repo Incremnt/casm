@@ -371,12 +371,14 @@ exp_ir_buf:
   ret                                        ;
 
 handle_eof:
-  lea       r14, [r14 + 2]                       ; r14 - pointer to parser IR buffer
-  lea       rbp, [r14 + r13 * 4]                 ; rbp - pointer to phdr buffer
-  lea       rsi, [r14 + r13 * 4 + PHDRBUF_SIZE]  ; allocate memory for parser IR buffer and phdr buffer
-  SYSCALL_1 SYS_BRK, rsi                         ;
-  mov       qword [phdrbuf_ptr], rbp             ; save phdr buffer pointer
-  lea       rsi, [r14 + r13]                     ; save label buffer pointer
-  mov       qword [labelbuf_ptr], rsi            ;
+  lea       r14, [r14 + 2]                                ; r14 - pointer to parser IR buffer
+  lea       rbp, [r14 + r13 * 8]                          ; rbp - pointer to phdr buffer
+  lea       rsi, [r14 + r13 * 8 + PHDRBUF_SIZE]           ; allocate memory for buffers
+  SYSCALL_1 SYS_BRK, rsi                                  ;
+  mov       qword [phdrbuf_ptr], rbp                      ; save phdr buffer pointer
+  lea       rsi, [r14 + r13]                              ; save label buffer pointer
+  mov       qword [labelbuf_ptr], rsi                     ; save delayed address buffer
+  lea       rsi, [rsi + r13 * 4]                          ;
+  mov       qword [deladrbuf_ptr], rsi                    ;
 
 lexer_end = $
