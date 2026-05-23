@@ -116,6 +116,13 @@ ctrl_group:
   lea       rbp, [rbp + 32]                        ;
   mov       rdi, qword [phdrbuf_ptr]               ;
   movzx     ecx, word [ehdr.phnum]                 ;
+  cmp       ecx, 1                                 ;
+  jne       .not_1_phdr                            ;
+  mov       ecx, PHENTSIZE                         ;
+  sub       dword [rdi + phdr.filesz - phdr], ecx  ;
+  sub       dword [rdi + phdr.memsz - phdr], ecx   ;
+  jmp       parser_end
+.not_1_phdr:
   sub       ecx, 2                                 ;
   imul      ecx, ecx, PHENTSIZE                    ;
 .fix_phdr_fields:
