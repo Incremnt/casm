@@ -86,6 +86,7 @@ ctrl_group:
   jnz       parser_end                             ;
   cmp       rbp, r11                               ;
   jl        .skip_expand                           ;
+  sub       r11, qword [phdrbuf_ptr]               ;
   push      r11                                    ; expand phdr buffer if it needs more space
   push      r11                                    ;
   SYSCALL_1 SYS_BRK, 0                             ;
@@ -94,6 +95,7 @@ ctrl_group:
   SYSCALL_1 SYS_BRK, rdx                           ;
   pop       r11                                    ;
   lea       r11, [r11 * 2]                         ; expand by x2 more next time
+  add       r11, qword [phdrbuf_ptr]               ;
 .skip_expand:
   mov       edx, dword [phdr_flags]                ;
   mov       dword [phdr.flags], edx                ;
@@ -879,6 +881,7 @@ dir_group:
 .write_phdr:
   cmp       rbp, r11                                  ;
   jl        .skip_expand                              ;
+  sub       r11, qword [phdrbuf_ptr]                  ;
   push      r11                                       ; expand phdr buffer if it needs more space
   push      r11                                       ;
   SYSCALL_1 SYS_BRK, 0                                ;
@@ -887,6 +890,7 @@ dir_group:
   SYSCALL_1 SYS_BRK, rdx                              ;
   pop       r11                                       ;
   lea       r11, [r11 * 2]                            ; expand by x2 more next time
+  add       r11, qword [phdrbuf_ptr]                  ;
 .skip_expand:
   mov       edx, dword [phdr.filesz]                  ;
   add       dword [phdr.offset], edx                  ;
