@@ -114,7 +114,18 @@ ctrl_group:
   mov       rdx, qword [phdr + 24]                 ;
   mov       qword [rbp + 24], rdx                  ;
   lea       rbp, [rbp + 32]                        ;
-  jmp       parser_end                             ;
+  mov       rdi, qword [phdrbuf_ptr]               ;
+  movzx     ecx, word [ehdr.phnum]                 ;
+  sub       ecx, 2                                 ;
+  imul      ecx, ecx, PHENTSIZE                    ;
+.fix_phdr_fields:
+  add       rdi, PHENTSIZE                         ;
+  cmp       rdi, rbp                               ;
+  je        parser_end                             ;
+  add       dword [rdi + phdr.offset - phdr], ecx  ;
+  add       dword [rdi + phdr.vaddr - phdr], ecx   ;
+  add       dword [rdi + phdr.paddr - phdr], ecx   ;
+  jmp       .fix_phdr_fields                       ;
 
 .handle_num:
   test      rbx, IMM_BIT                           ;
@@ -881,14 +892,6 @@ dir_group:
   mov       rcx, qword [phdrbuf_ptr]                  ;
   add       rcx, PHENTSIZE                            ;
   cmp       rbp, rcx                                  ;
-  jne       .skip_vaddr_fix                           ;
-  movzx     ecx, word [ehdr.phnum]                    ;
-  dec       ecx                                       ;
-  imul      ecx, ecx, PHENTSIZE                       ;
-  add       dword [phdr.vaddr], ecx                   ;
-  add       dword [phdr.paddr], ecx                   ;
-  add       dword [phdr.offset], ecx                  ;
-.skip_vaddr_fix:
   mov       rdx, qword [phdr]                         ; write phdr to phdr buffer
   mov       qword [rbp], rdx                          ;
   mov       rdx, qword [phdr + 8]                     ;
