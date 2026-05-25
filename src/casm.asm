@@ -82,24 +82,49 @@ include "codegen.asm"
 
 ; error handlers
 usage_err:
+  mov       rax, '?'
+  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_usage_msg, E_USAGE_MSG_SZ
-  jmp       err_exit
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 open_err:
+  mov       rax, '?'
+  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_open_msg, E_OPEN_MSG_SZ
-  jmp       err_exit
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 lseek_err:
+  mov       rax, '?'
+  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_lseek_msg, E_LSEEK_MSG_SZ
-  jmp       err_exit
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 brk_err:
+  mov       rax, '?'
+  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_brk_msg, E_BRK_MSG_SZ
-  jmp       err_exit
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 read_err:
+  mov       rax, '?'
+  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_read_msg, E_READ_MSG_SZ
-  jmp       err_exit
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 unk_tkn_err:
   SYSCALL_3 SYS_WRITE, STDERR, e_unktkn_msg, E_UNKTKN_MSG_SZ
@@ -122,10 +147,29 @@ op_sz_not_match_err:
   jmp       err_exit
 
 undef_lbl_err:
+  mov       rax, '?'
+  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_undef_lbl_msg, E_UNDEF_LBL_MSG_SZ
-  jmp       err_exit
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
+  SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 err_exit:
+  mov       rax, qword [current_line]
+  mov       rcx, LINE_BUF_SZ - 1
+.convert_line:
+  xor       rdx, rdx
+  mov       rbx, 10
+  div       rbx
+  add       dl, '0'
+  mov       byte [line_buf + rcx], dl
+  dec       rcx
+  test      rax, rax
+  jnz       .convert_line
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 ;--------------------;
@@ -134,38 +178,48 @@ err_exit:
 segment readable writable
 
 ; error messages
-e_usage_msg        db ESC, '[31m', "[Error]: Too many/few arguments.", ESC, '[0m', LF
-E_USAGE_MSG_SZ = $ - e_usage_msg
+e_usage_msg        db ESC, '[31m', "[Error]: Too many/few arguments", ESC, '[0m', LF
+E_USAGE_MSG_SZ        = $ - e_usage_msg
 
-e_open_msg         db ESC, '[31m', "[Error]: Can't open file.", ESC, '[0m', LF
-E_OPEN_MSG_SZ = $ - e_open_msg
+e_open_msg         db ESC, '[31m', "[Error]: Can't open file", ESC, '[0m', LF
+E_OPEN_MSG_SZ         = $ - e_open_msg
 
-e_lseek_msg        db ESC, '[31m', "[Error]: SYS_LSEEK failed.", ESC, '[0m', LF
-E_LSEEK_MSG_SZ = $ - e_lseek_msg
+e_lseek_msg        db ESC, '[31m', "[Error]: SYS_LSEEK failed", ESC, '[0m', LF
+E_LSEEK_MSG_SZ        = $ - e_lseek_msg
 
-e_brk_msg          db ESC, '[31m', "[Error]: Can't allocate memory.", ESC, '[0m', LF
-E_BRK_MSG_SZ = $ - e_brk_msg
+e_brk_msg          db ESC, '[31m', "[Error]: Can't allocate memory", ESC, '[0m', LF
+E_BRK_MSG_SZ          = $ - e_brk_msg
 
-e_read_msg         db ESC, '[31m', "[Error]: SYS_READ failed.", ESC, '[0m', LF
-E_READ_MSG_SZ = $ - e_read_msg
+e_read_msg         db ESC, '[31m', "[Error]: SYS_READ failed", ESC, '[0m', LF
+E_READ_MSG_SZ         = $ - e_read_msg
 
-e_unktkn_msg       db ESC, '[31m', "[Error]: Unknown token.", ESC, '[0m', LF
-E_UNKTKN_MSG_SZ = $ - e_unktkn_msg
+e_unktkn_msg       db ESC, '[31m', "[Error]: Unknown token", ESC, '[0m', LF
+E_UNKTKN_MSG_SZ       = $ - e_unktkn_msg
 
-e_longnum_msg      db ESC, '[31m', "[Error]: Number is too long.", ESC, '[0m', LF
-E_LONGNUM_MSG_SZ = $ - e_longnum_msg
+e_longnum_msg      db ESC, '[31m', "[Error]: Number is too long", ESC, '[0m', LF
+E_LONGNUM_MSG_SZ      = $ - e_longnum_msg
 
-e_invalid_char_msg db ESC, '[31m', "[Error]: Unexpected character in string.", ESC, '[0m', LF
+e_invalid_char_msg db ESC, '[31m', "[Error]: Unexpected character in string", ESC, '[0m', LF
 E_INVALID_CHAR_MSG_SZ = $ - e_invalid_char_msg
 
-e_invalid_expr_msg db ESC, '[31m', "[Error]: Invalid expression.", ESC, '[0m', LF
+e_invalid_expr_msg db ESC, '[31m', "[Error]: Invalid expression", ESC, '[0m', LF
 E_INVALID_EXPR_MSG_SZ = $ - e_invalid_expr_msg
 
-e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match.", ESC, '[0m', LF
+e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match", ESC, '[0m', LF
 E_OP_SZ_MATCH_MSG_SZ  = $ - e_op_sz_match_msg
 
-e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label.", ESC, '[0m', LF
+e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label", ESC, '[0m', LF
 E_UNDEF_LBL_MSG_SZ    = $ - e_undef_lbl_msg
+
+e_line_msg_st      db ESC, '[31m', "[Line]:  "
+E_LINE_MSG_ST_SZ      = $ - e_line_msg_st
+
+e_line_msg_end     db ESC, '[0m', LF
+E_LINE_MSG_END_SZ     = $ - e_line_msg_end
+
+current_line       dq 1
+line_buf           db 20 dup(0)
+LINE_BUF_SZ        = $ - line_buf
 
 ; pointers
 lex_irbuf_ptr  dq 0
