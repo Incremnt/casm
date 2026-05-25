@@ -236,6 +236,10 @@ ctrl_group:
   cmp       al, G_CTRL                             ;
   je        skip_ir                                ;
   mov       byte [r14], al                         ;
+  cmp       al, LF                                 ;
+  jne       .all_not_lf                            ;
+  inc       qword [current_line]                   ;
+.all_not_lf:
   inc       r12                                    ;
   inc       r14                                    ;
   inc       r15d                                   ;
