@@ -292,8 +292,6 @@ write_string:
 .write_insides:
   inc       r12                              ; write characters inside of string
   movzx     rax, byte [r12]                  ;
-  cmp       al, SPC                          ;
-  jl        invalid_char_err                 ;
   cmp       r14, r9                          ;
   jl        .skip_call2                      ;
   push      rax                              ;
