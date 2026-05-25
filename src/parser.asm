@@ -22,6 +22,7 @@
 ;================================;
 
 parser:
+  mov       qword [current_line], 1                            ;
   mov       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT + PHFIRST_BIT ; rbx - parser bit mask (expected tokens and other)
   mov       r12, qword [lex_irbuf_ptr]                         ; r12 - token buffer pointer
   xor       r15, r15                                           ; r15 - offset in elf headers
@@ -212,6 +213,10 @@ ctrl_group:
 .write_str:
   mov       al, byte [r12]                         ;
   mov       byte [r14], al                         ;
+  cmp       al, LF                                 ;
+  jne       .not_lf                                ;
+  inc       qword [current_line]                   ;
+.not_lf:
   inc       r15d                                   ;
   inc       dword [current_ptr]                    ;
   inc       r12                                    ;
@@ -578,6 +583,7 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_lf:
+  inc       qword [current_line]                   ;
   and       rbx, PHFIRST_BIT                       ;
   or        rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ; set instruction + directive + label bits
   call      normal_mode                            ; restore handler labels after custom modes
