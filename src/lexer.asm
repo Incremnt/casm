@@ -221,6 +221,7 @@ handle_del:
   jmp       write_del
 
 .newline_del:
+  inc       qword [current_line]
   mov       si, C_LF
   jmp       write_del
 
@@ -292,6 +293,10 @@ write_string:
 .write_insides:
   inc       r12                              ; write characters inside of string
   movzx     rax, byte [r12]                  ;
+  cmp       al, LF                           ;
+  jne       .not_lf                          ;
+  inc       qword [current_line]             ;
+.not_lf:
   cmp       r14, r9                          ;
   jl        .skip_call2                      ;
   push      rax                              ;
