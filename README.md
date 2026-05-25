@@ -1,4 +1,4 @@
-# Cool Assembler v1.0.1
+# Cool Assembler v1.0.2
 A small learning x86 assembler written in FASM.
 
 ## License
