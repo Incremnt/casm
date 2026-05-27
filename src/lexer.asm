@@ -159,6 +159,8 @@ write_ir:
 .skip_call:
   test      byte [r15 + LEX_FLAGS_OFF], PHDR  ;
   jz        .not_segment                      ;
+  cmp       byte [do_gen_elf], 0              ;
+  je        .not_segment                      ;
   add       dword [current_ptr], PHENTSIZE    ;
 .not_segment:
   mov       si, word [r15 + LEX_IR_OFF]       ; write IR to the IR buffer
