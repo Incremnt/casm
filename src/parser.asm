@@ -741,6 +741,7 @@ traverse_operands:
   jmp       traverse_operands                      ;
 
 .terminal:
+  call      operand_mode                              ;
   mov       al, byte [rsi + PAR_OP_OFF]               ; write opcode
   mov       di, word [rsi + PAR_NODEFLAGS_OFF]        ;
   test      di, OPSIZE                                ; handle prefix opcode flags
@@ -816,18 +817,21 @@ dir_group:
 .handle_db:
   and       rbx, PHFIRST_BIT                          ; just set bits
   or        rbx, UNLIMSTR_BIT + IMM8_BIT              ; set unlimited lenght to string (quality of life)
+  call      operand_mode                              ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
 .handle_dw:
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, IMM16_BIT                            ;
+  call      operand_mode                              ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
 .handle_dd:
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, IMM32_BIT                            ;
+  call      operand_mode                              ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
@@ -941,6 +945,7 @@ modrm_mode:
   mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_mod_reg     ; modrm mode for ModR/M bytes
   mov       qword [group_jmp_tbl + G_REG16 * 8], ctrl_group.handle_mod_reg     ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], ctrl_group.handle_mod_reg      ;
+  mov       qword [ctrl_jmp_tbl + C_COM * 8], ctrl_group.handle_comma          ;
   ret                                                                          ;
 
 sib_mode:
@@ -956,16 +961,23 @@ sib_mode:
   mov       qword [ctrl_jmp_tbl + C_LF  * 8], invalid_expression_err           ;
   ret                                                                          ;
 
-normal_mode:
-  mov       qword [ctrl_jmp_tbl + C_MEMST * 8], invalid_expression_err         ; restore labels after custom modes
-  mov       qword [ctrl_jmp_tbl + C_MEMEN * 8], invalid_expression_err         ;
+operand_mode:
   mov       qword [group_jmp_tbl + G_REG32 * 8], skip_ir                       ;
   mov       qword [group_jmp_tbl + G_REG16 * 8], skip_ir                       ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], skip_ir                        ;
+  mov       qword [ctrl_jmp_tbl + C_COM * 8], ctrl_group.handle_comma          ;
+  ret                                                                          ;
+
+normal_mode:
+  mov       qword [ctrl_jmp_tbl + C_MEMST * 8], invalid_expression_err         ; restore labels after custom modes
+  mov       qword [ctrl_jmp_tbl + C_MEMEN * 8], invalid_expression_err         ;
+  mov       qword [group_jmp_tbl + G_REG32 * 8], invalid_expression_err        ;
+  mov       qword [group_jmp_tbl + G_REG16 * 8], invalid_expression_err        ;
+  mov       qword [group_jmp_tbl + G_REG8 * 8], invalid_expression_err         ;
   mov       qword [ctrl_jmp_tbl + C_NUM * 8], ctrl_group.handle_num            ;
   mov       qword [ctrl_jmp_tbl + C_ADR * 8], ctrl_group.handle_address        ;
   mov       qword [ctrl_jmp_tbl + C_STR * 8], ctrl_group.handle_str            ;
-  mov       qword [ctrl_jmp_tbl + C_COM * 8], ctrl_group.handle_comma          ;
+  mov       qword [ctrl_jmp_tbl + C_COM * 8], invalid_expression_err           ;
   mov       qword [ctrl_jmp_tbl + C_LF  * 8], ctrl_group.handle_lf             ;
   mov       qword [modrm_ptr], modrm_ptr                                       ;
   ret                                                                          ;
