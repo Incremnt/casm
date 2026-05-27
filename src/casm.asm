@@ -334,9 +334,9 @@ group_jmp_tbl:
   dq ctrl_group
   dq instr_group
   dq einst_group
-  dq skip_ir
-  dq skip_ir
-  dq skip_ir
+  dq invalid_expression_err
+  dq invalid_expression_err
+  dq invalid_expression_err
   dq dir_group
 
 ctrl_jmp_tbl:
@@ -349,7 +349,7 @@ ctrl_jmp_tbl:
   dq invalid_expression_err
   dq ctrl_group.handle_plus
   dq ctrl_group.handle_mul
-  dq ctrl_group.handle_comma
+  dq invalid_expression_err
   dq ctrl_group.handle_lf
   dq ctrl_group.handle_byte
   dq ctrl_group.handle_word
