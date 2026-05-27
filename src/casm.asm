@@ -31,10 +31,50 @@ include "macros.inc"
 ;--------------------;
 segment readable executable
 _start:
-  cmp       qword [rsp], 3                                                 ; handle usage error (too many/few arguments)
-  jne       usage_err                                                      ;
+  cmp       qword [rsp], 3                                                 ; handle usage error
+  jl        usage_err                                                      ;
 
-  mov       rbx, qword [rsp + 16]                                          ;
+  mov       rcx, 2                                                         ; handle usage flags
+  mov       rdx, 0                                                         ;
+parse_flags:
+  mov       rax, qword [rsp + rcx * 8]                                     ;
+  mov       rax, qword [rax]                                               ;
+  cmp       rax, qword [noelf_flag]                                        ;
+  je        .noelf_flag                                                    ;
+  cmp       ax, word [noelf_sflag]                                         ;
+  je        .noelf_flag                                                    ;
+  cmp       rax, qword [bytes_flag]                                        ;
+  je        .bytes_flag                                                    ;
+  cmp       ax, word [bytes_sflag]                                         ;
+  je        .bytes_flag                                                    ;
+  cmp       al, '-'                                                        ;
+  je        usage_err                                                      ;
+  mov       rdx, 1                                                         ;
+  cmp       rcx, qword [rsp]                                               ;
+  je        .end_flags_parse                                               ;
+  inc       rcx                                                            ;
+  jmp       parse_flags                                                    ;
+.noelf_flag:
+  test      rdx, rdx                                                       ;
+  jnz       usage_err                                                      ;
+  mov       byte [do_gen_elf], 0                                           ;
+  sub       dword [current_ptr], EHSIZE                                    ;
+  cmp       rcx, qword [rsp]                                               ;
+  je        .end_flags_parse                                               ;
+  inc       rcx                                                            ;
+  jmp       parse_flags                                                    ;
+.bytes_flag:
+  test      rdx, rdx                                                       ;
+  jnz       usage_err                                                      ;
+  mov       byte [do_show_bytes], 1                                        ;
+  cmp       rcx, qword [rsp]                                               ;
+  je        .end_flags_parse                                               ;
+  inc       rcx                                                            ;
+  jmp       parse_flags                                                    ;
+.end_flags_parse:
+  push      rcx                                                            ;
+
+  mov       rbx, qword [rsp + rcx * 8]                                     ;
   SYSCALL_3 SYS_OPEN, rbx, O_RDONLY, 0                                     ; open input file in readonly mode
   mov       rbx, rax                                                       ; save fd in rbx
   test      rbx, rbx                                                       ; handle file open error
@@ -66,7 +106,8 @@ _start:
 
   SYSCALL_1 SYS_CLOSE, rbx                                                 ; close input file
 
-  mov       rbx, qword [rsp + 24]                                          ;
+  pop       rcx                                                            ;
+  mov       rbx, qword [rsp + rcx * 8]                                     ;
   SYSCALL_3 SYS_OPEN, rbx, O_WRONLY + O_APPEND + O_CREAT + O_TRUNC, 0744o  ; open output file in writeonly + append mode
   test      rax, rax                                                       ; handle file open error
   js        open_err                                                       ;
@@ -82,48 +123,23 @@ include "codegen.asm"
 
 ; error handlers
 usage_err:
-  mov       rax, '?'
-  mov       qword [line_buf], rax
-  SYSCALL_3 SYS_WRITE, STDERR, e_usage_msg, E_USAGE_MSG_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
+  SYSCALL_3 SYS_WRITE, STDERR, e_help_msg, E_HELP_MSG_SZ
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 open_err:
-  mov       rax, '?'
-  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_open_msg, E_OPEN_MSG_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 lseek_err:
-  mov       rax, '?'
-  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_lseek_msg, E_LSEEK_MSG_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 brk_err:
-  mov       rax, '?'
-  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_brk_msg, E_BRK_MSG_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 read_err:
-  mov       rax, '?'
-  mov       qword [line_buf], rax
   SYSCALL_3 SYS_WRITE, STDERR, e_read_msg, E_READ_MSG_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_st, E_LINE_MSG_ST_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, line_buf, LINE_BUF_SZ
-  SYSCALL_3 SYS_WRITE, STDERR, e_line_msg_end, E_LINE_MSG_END_SZ
   SYSCALL_1 SYS_EXIT, EXIT_FAILURE
 
 unk_tkn_err:
@@ -178,9 +194,6 @@ err_exit:
 segment readable writable
 
 ; error messages
-e_usage_msg        db ESC, '[31m', "[Error]: Too many/few arguments", ESC, '[0m', LF
-E_USAGE_MSG_SZ        = $ - e_usage_msg
-
 e_open_msg         db ESC, '[31m', "[Error]: Can't open file", ESC, '[0m', LF
 E_OPEN_MSG_SZ         = $ - e_open_msg
 
@@ -217,9 +230,32 @@ E_LINE_MSG_ST_SZ      = $ - e_line_msg_st
 e_line_msg_end     db ESC, '[0m', LF
 E_LINE_MSG_END_SZ     = $ - e_line_msg_end
 
+e_bytes_msg_st     db "[Size]: "
+E_BYTES_MSG_ST_SZ     = $ - e_bytes_msg_st
+
+e_bytes_msg_en     db " bytes", LF
+E_BYTES_MSG_EN_SZ     = $ - e_bytes_msg_en
+
+e_help_msg         db "casm [OPTIONS] <SOURCE> <OUTPUT>", LF
+                   db "  -n, --noelf    don't generate ELF header, ignore PHDR directives", LF
+                   db "  -b, --bytes    show output file size in bytes", LF
+E_HELP_MSG_SZ         = $ - e_help_msg
+
 current_line       dq 1
 line_buf           db 20 dup(0)
-LINE_BUF_SZ        = $ - line_buf
+LINE_BUF_SZ           = $ - line_buf
+bytes_buf          db 20 dup(0)
+BYTES_BUF_SZ          = $ - bytes_buf
+
+; usage flags
+noelf_flag     db "--noelf", NUL
+noelf_sflag    db "-n", 0, 0, 0, 0, 0, NUL
+bytes_flag     db "--bytes", NUL
+bytes_sflag    db "-b", 0, 0, 0, 0, 0, NUL
+
+; usage flag bools
+do_gen_elf     db 1
+do_show_bytes  db 0
 
 ; pointers
 lex_irbuf_ptr  dq 0
