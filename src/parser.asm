@@ -527,7 +527,7 @@ ctrl_group:
   jmp       .del_skip_adr                          ;
 
 .handle_sib_address:
-  test      rbx, MULT_BIT                          ;
+  test      rbx, MULT_BIT + MINUS_BIT              ;
   jnz       invalid_expression_err                 ;
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
@@ -549,11 +549,6 @@ ctrl_group:
   jne       .sib_next_label                        ;
   mov       esi, dword [r13 + 1]                   ;
   mov       rdi, qword [sib_offset_ptr]            ;
-  test      rbx, MINUS_BIT                         ;
-  jz        .skip_adr_neg                          ;
-  neg       esi                                    ;
-  xor       rbx, MINUS_BIT                         ;
-.skip_adr_neg:
   add       dword [rdi], esi                       ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
