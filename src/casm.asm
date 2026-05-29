@@ -325,6 +325,7 @@ del_jmp_tbl:
   dq handle_del.lbracket_del
   dq handle_del.rbracket_del
   dq handle_del.plus_del
+  dq handle_del.minus_del
   dq handle_del.multiply_del
   dq handle_del.comma_del
   dq handle_del.newline_del
@@ -347,8 +348,9 @@ ctrl_jmp_tbl:
   dq ctrl_group.handle_address
   dq invalid_expression_err
   dq invalid_expression_err
-  dq ctrl_group.handle_plus
-  dq ctrl_group.handle_mul
+  dq invalid_expression_err
+  dq invalid_expression_err
+  dq invalid_expression_err
   dq invalid_expression_err
   dq ctrl_group.handle_lf
   dq ctrl_group.handle_byte
