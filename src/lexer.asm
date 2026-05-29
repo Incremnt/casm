@@ -42,6 +42,7 @@ lexer:
   mov       byte [rbp + '['], LBR_DEL      ;
   mov       byte [rbp + ']'], RBR_DEL      ;
   mov       byte [rbp + '+'], PLS_DEL      ;
+  mov       byte [rbp + '-'], MIN_DEL      ;
   mov       byte [rbp + '*'], MUL_DEL      ;
   mov       byte [rbp + ','], COM_DEL      ;
   mov       byte [rbp + LF ], LF_DEL       ;
@@ -212,6 +213,10 @@ handle_del:
 
 .plus_del:
   mov       si, C_PLUS
+  jmp       write_del
+
+.minus_del:
+  mov       si, C_MINUS
   jmp       write_del
 
 .multiply_del:
