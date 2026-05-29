@@ -175,6 +175,11 @@ ctrl_group:
   test      rbx, MULT_BIT                          ;
   jnz       .write_scale                           ;
   mov       edx, dword [r12 + 2]                   ;
+  test      rbx, MINUS_BIT                         ;
+  jz        .skip_num_neg                          ;
+  neg       edx                                    ;
+  xor       rbx, MINUS_BIT                         ;
+.skip_num_neg:
   mov       rdi, qword [sib_offset_ptr]            ;
   add       edx, dword [rdi]                       ;
   mov       dword [rdi], edx                       ;
@@ -266,8 +271,13 @@ ctrl_group:
   cmp       ecx, 4                                 ;
   jne       invalid_expression_err                 ;
   mov       rdi, qword [sib_offset_ptr]            ;
-  mov       edx, dword [rdi]                       ;
-  add       edx, dword [r12 - 4]                   ;
+  mov       edx, dword [r12 - 4]                   ;
+  test      rbx, MINUS_BIT                         ;
+  jz        .skip_str_neg                          ;
+  neg       edx                                    ;
+  xor       rbx, MINUS_BIT                         ;
+.skip_str_neg:
+  add       edx, dword [rdi]                       ;
   mov       dword [rdi], edx                       ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -291,6 +301,8 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_sib_reg:
+  test      rbx, MINUS_BIT + MULT_BIT              ;
+  jnz       invalid_expression_err                 ;
   test      rbx, PLUS_BIT                          ;
   jnz       .skip_modset                           ;
   mov       rdi, qword [modrm_ptr]                 ;
@@ -300,8 +312,6 @@ ctrl_group:
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
   and       rbx, rdx                               ;
-  test      rbx, MULT_BIT                          ;
-  jnz       invalid_expression_err                 ;
   mov       ax, word [r12 + 2]                     ; write register to index field if next token is multiply token
   xchg      ah, al                                 ;
   mov       r8, IDXFIRST_BIT                       ;
@@ -539,6 +549,11 @@ ctrl_group:
   jne       .sib_next_label                        ;
   mov       esi, dword [r13 + 1]                   ;
   mov       rdi, qword [sib_offset_ptr]            ;
+  test      rbx, MINUS_BIT                         ;
+  jz        .skip_adr_neg                          ;
+  neg       esi                                    ;
+  xor       rbx, MINUS_BIT                         ;
+.skip_adr_neg:
   add       dword [rdi], esi                       ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -572,6 +587,13 @@ ctrl_group:
   test      rbx, PLUS_BIT                          ; yea just bits
   jnz       invalid_expression_err                 ;
   or        rbx, PLUS_BIT                          ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+
+.handle_minus:
+  test      rbx, MINUS_BIT                         ;
+  jnz       invalid_expression_err                 ;
+  or        rbx, MINUS_BIT                         ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -959,6 +981,9 @@ sib_mode:
   mov       qword [ctrl_jmp_tbl + C_STR * 8], ctrl_group.handle_sib_str        ;
   mov       qword [ctrl_jmp_tbl + C_COM * 8], invalid_expression_err           ;
   mov       qword [ctrl_jmp_tbl + C_LF  * 8], invalid_expression_err           ;
+  mov       qword [ctrl_jmp_tbl + C_PLUS * 8], ctrl_group.handle_plus          ;
+  mov       qword [ctrl_jmp_tbl + C_MINUS * 8], ctrl_group.handle_minus        ;
+  mov       qword [ctrl_jmp_tbl + C_MULT * 8], ctrl_group.handle_mul           ;
   ret                                                                          ;
 
 operand_mode:
@@ -979,6 +1004,9 @@ normal_mode:
   mov       qword [ctrl_jmp_tbl + C_STR * 8], ctrl_group.handle_str            ;
   mov       qword [ctrl_jmp_tbl + C_COM * 8], invalid_expression_err           ;
   mov       qword [ctrl_jmp_tbl + C_LF  * 8], ctrl_group.handle_lf             ;
+  mov       qword [ctrl_jmp_tbl + C_PLUS * 8], invalid_expression_err          ;
+  mov       qword [ctrl_jmp_tbl + C_MINUS * 8], invalid_expression_err         ;
+  mov       qword [ctrl_jmp_tbl + C_MULT * 8], invalid_expression_err          ;
   mov       qword [modrm_ptr], modrm_ptr                                       ;
   ret                                                                          ;
 
