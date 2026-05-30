@@ -83,11 +83,11 @@ lexer:
   mov       byte [rcx + ']'], VALID      ;
 
   mov       r13, LEX_IRBUF_SIZE          ; init pointers
-  lea       r9, [r14 + r13 - 1]          ;
+  lea       r9, [r14 + r13 - 8]          ;
   mov       r15, lex_trie                ;
 
-  movzx     rax, byte [r12]
 next_lex:
+  movzx     rax, byte [r12]                   ;
   test      al, al                            ; handle eof
   jz        handle_eof                        ;
   cmp       byte [rbp + rax], DELIM           ; other logic if char is delimiter
@@ -377,7 +377,7 @@ exp_ir_buf:
   mov       rcx, valid_char_tbl              ; restore valid characters table pointer
   mov       rsi, qword [lex_irbuf_ptr]       ;
   lea       r13, [r13 * 2]                   ; will allocate x2 more memory next time
-  lea       r9, [rsi + r13 - 1]              ; update r9
+  lea       r9, [rsi + r13 - 8]              ; update r9
   pop       rsi                              ; restore rsi
   ret                                        ;
 
