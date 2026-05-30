@@ -198,10 +198,12 @@ ctrl_group:
   shl       cl, 6                                  ;
   or        byte [rdi], cl                         ;
   xor       rbx, MULT_BIT                          ;
+  inc       qword [style_points]                   ; scale in SIB is cool
   lea       r12, [r12 + 6]                         ;
   jmp       parse_ir                               ;
 
 .handle_str:
+  inc       qword [style_points]                   ; strings are cool too
   lea       r12, [r12 + 2]                         ;
   test      rbx, UNLIMSTR_BIT                      ; write all string if there was db directive
   jnz       .write_all_str                         ;
@@ -252,10 +254,11 @@ ctrl_group:
   jmp       .write_all_str                         ;
 
 .handle_sib_str:
+  add       qword [style_points], 2                ; strings in memory expressions are very cool
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
   and       rbx, rdx                               ;
-  test      rbx, MULT_BIT                          ; string can contain only characters from 32 to 255
+  test      rbx, MULT_BIT                          ;
   jnz       invalid_expression_err                 ;
   xor       rcx, rcx                               ;
   lea       r12, [r12 + 2]                         ;
@@ -388,6 +391,7 @@ ctrl_group:
 .handle_memstart:
   push      rbx                                    ; save parser bits in stack
   or        rbx, IMM32_BIT + BASFIRST_BIT          ;
+  inc       qword [style_points]                   ; memory expressions are cool
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -435,6 +439,7 @@ ctrl_group:
   test      rbx, LABEL_BIT                         ;
   jz        invalid_expression_err                 ;
   xor       rbx, LABEL_BIT                         ;
+  inc       qword [style_points]                   ; labels are cool
   mov       r13, qword [labelbuf_ptr]              ;
   lea       r12, [r12 + 2]                         ;
   mov       rdi, 1                                 ;
@@ -467,6 +472,7 @@ ctrl_group:
 .handle_address:
   test      rbx, IMM32_BIT                         ;
   jz        invalid_expression_err                 ;
+  inc       qword [style_points]                   ; addresses are cool
   lea       r12, [r12 + 2]                         ;
   mov       r8, r12                                ;
   mov       r13, qword [labelbuf_ptr]              ;
@@ -625,6 +631,7 @@ instr_group:
 einst_group:
   test      rbx, INSTR_BIT                         ; like normal instructions
   jz        invalid_expression_err                 ;
+  add       qword [style_points], 2                ; weird instructions are very cool
   xor       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ;
   movzx     rax, byte [r12 + 1]                    ;
   mov       rsi, qword [einst_node_tbl + rax * 8]  ;
@@ -853,6 +860,7 @@ dir_group:
   jmp       parse_ir                                  ;
 
 .handle_text:
+  inc       qword [style_points]                        ;
   mov       rdi, qword [phdrbuf_ptr]                    ;
   add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
   add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
@@ -868,6 +876,7 @@ dir_group:
   jmp       .skip_write                                 ;
 
 .handle_data:
+  inc       qword [style_points]                        ;
   mov       rdi, qword [phdrbuf_ptr]                    ;
   add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
   add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
@@ -883,6 +892,7 @@ dir_group:
   jmp       .skip_write                                 ;
 
 .handle_rodata:
+  inc       qword [style_points]                        ;
   mov       rdi, qword [phdrbuf_ptr]                    ;
   add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
   add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
@@ -898,6 +908,10 @@ dir_group:
   jmp       .skip_write                                 ;
 
 .handle_entry:
+  test      rbx, DIR_BIT                              ;
+  jz        invalid_expression_err                    ;
+  xor       rbx, DIR_BIT                              ;
+  add       qword [style_points], 2                   ; custom entries are very stylish
   mov       ax, word [r12 + 2]                        ;
   xchg      ah, al                                    ;
   cmp       ax, C_ADR                                 ;
