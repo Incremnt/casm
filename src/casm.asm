@@ -41,15 +41,16 @@ parse_flags:
   mov       rax, qword [rax]                                               ;
   cmp       rax, qword [noelf_flag]                                        ;
   je        .noelf_flag                                                    ;
-  cmp       ax, word [noelf_sflag]                                         ;
-  je        .noelf_flag                                                    ;
   cmp       rax, qword [bytes_flag]                                        ;
-  je        .bytes_flag                                                    ;
-  cmp       ax, word [bytes_sflag]                                         ;
   je        .bytes_flag                                                    ;
   cmp       rax, qword [style_flag]                                        ;
   je        .style_flag                                                    ;
-  cmp       ax, word [style_sflag]                                         ;
+  and       eax, 0x00FFFFFF                                                ;
+  cmp       eax, dword [noelf_sflag]                                       ;
+  je        .noelf_flag                                                    ;
+  cmp       eax, dword [bytes_sflag]                                       ;
+  je        .bytes_flag                                                    ;
+  cmp       eax, dword [style_sflag]                                       ;
   je        .style_flag                                                    ;
   cmp       al, '-'                                                        ;
   je        usage_err                                                      ;
@@ -279,11 +280,11 @@ STYLE_BUF_SZ          = $ - style_buf
 
 ; usage flags
 noelf_flag     db "--noelf", NUL
-noelf_sflag    db "-n", NUL
+noelf_sflag    db "-n", 0, NUL
 bytes_flag     db "--bytes", NUL
-bytes_sflag    db "-b", NUL
+bytes_sflag    db "-b", 0, NUL
 style_flag     db "--style", NUL
-style_sflag    db "-s", NUL
+style_sflag    db "-s", 0, NUL
 
 ; usage flag bools
 do_gen_elf     db 1
