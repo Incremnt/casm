@@ -87,6 +87,8 @@ parse_flags:
   push      rcx                                                            ;
 
   mov       rbx, qword [rsp + rcx * 8]                                     ;
+  cmp       byte [rbx], '-'                                                ;
+  je        usage_err                                                      ;
   SYSCALL_3 SYS_OPEN, rbx, O_RDONLY, 0                                     ; open input file in readonly mode
   mov       rbx, rax                                                       ; save fd in rbx
   test      rbx, rbx                                                       ; handle file open error
