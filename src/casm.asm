@@ -47,6 +47,10 @@ parse_flags:
   je        .bytes_flag                                                    ;
   cmp       ax, word [bytes_sflag]                                         ;
   je        .bytes_flag                                                    ;
+  cmp       rax, qword [style_flag]                                        ;
+  je        .style_flag                                                    ;
+  cmp       ax, word [style_sflag]                                         ;
+  je        .style_flag                                                    ;
   cmp       al, '-'                                                        ;
   je        usage_err                                                      ;
   mov       rdx, 1                                                         ;
@@ -67,6 +71,14 @@ parse_flags:
   test      rdx, rdx                                                       ;
   jnz       usage_err                                                      ;
   mov       byte [do_show_bytes], 1                                        ;
+  cmp       rcx, qword [rsp]                                               ;
+  je        .end_flags_parse                                               ;
+  inc       rcx                                                            ;
+  jmp       parse_flags                                                    ;
+.style_flag:
+  test      rdx, rdx                                                       ;
+  jnz       usage_err                                                      ;
+  mov       byte [do_show_rank], 1                                         ;
   cmp       rcx, qword [rsp]                                               ;
   je        .end_flags_parse                                               ;
   inc       rcx                                                            ;
@@ -230,32 +242,60 @@ E_LINE_MSG_ST_SZ      = $ - e_line_msg_st
 e_line_msg_end     db ESC, '[0m', LF
 E_LINE_MSG_END_SZ     = $ - e_line_msg_end
 
-e_bytes_msg_st     db "[Size]: "
+e_bytes_msg_st     db "[Size]:  "
 E_BYTES_MSG_ST_SZ     = $ - e_bytes_msg_st
 
 e_bytes_msg_en     db " bytes", LF
 E_BYTES_MSG_EN_SZ     = $ - e_bytes_msg_en
 
+e_style_msg_st     db "[Style]: "
+E_STYLE_MSG_ST_SZ     = $ - e_style_msg_st
+
+e_style_msg_en     db "%", LF
+E_STYLE_MSG_EN_SZ     = $ - e_style_msg_en
+
+e_rank_msg_st      db "[Rank]: "
+E_RANK_MSG_ST_SZ      = $ - e_rank_msg_st
+
+e_rank_msg_en      db LF
+E_RANK_MSG_EN_SZ      = $ - e_rank_msg_en
+
 e_help_msg         db "casm [OPTIONS] <SOURCE> <OUTPUT>", LF
                    db "  -n, --noelf    don't generate ELF header, ignore PHDR directives", LF
                    db "  -b, --bytes    show output file size in bytes", LF
+                   db "  -s, --style    show your rank and style points percentage", LF
 E_HELP_MSG_SZ         = $ - e_help_msg
 
 current_line       dq 1
+style_points       dq 0
 line_buf           db 20 dup(0)
 LINE_BUF_SZ           = $ - line_buf
 bytes_buf          db 20 dup(0)
 BYTES_BUF_SZ          = $ - bytes_buf
+style_buf          db 20 dup(0)
+STYLE_BUF_SZ          = $ - style_buf
 
 ; usage flags
 noelf_flag     db "--noelf", NUL
-noelf_sflag    db "-n", 0, 0, 0, 0, 0, NUL
+noelf_sflag    db "-n", NUL
 bytes_flag     db "--bytes", NUL
-bytes_sflag    db "-b", 0, 0, 0, 0, 0, NUL
+bytes_sflag    db "-b", NUL
+style_flag     db "--style", NUL
+style_sflag    db "-s", NUL
 
 ; usage flag bools
 do_gen_elf     db 1
 do_show_bytes  db 0
+do_show_rank   db 0
+
+; ranks
+st_p           db ESC, '[43m', " P ", ESC, '[0m'
+st_s           db ESC, '[31m', " S ", ESC, '[0m'
+st_a           db ESC, '[35m', " A ", ESC, '[0m'
+st_b           db ESC, '[33m', " B ", ESC, '[0m'
+st_c           db ESC, '[32m', " C ", ESC, '[0m'
+st_d           db ESC, '[34m', " D ", ESC, '[0m'
+RANK_SZ           = $ - st_d
 
 ; pointers
 lex_irbuf_ptr  dq 0
@@ -267,6 +307,7 @@ modrm_ptr      dq 0
 sib_ptr        dq 0
 sib_offset_ptr dq 0
 deladr_offset  dq 0
+rank_ptr       dq 0
 current_ptr    dd 0x08048034
 
 ; file descriptors
