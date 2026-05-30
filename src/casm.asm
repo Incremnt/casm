@@ -416,6 +416,39 @@ einst_node_tbl:
   dq par_trie.jnp_node
   dq par_trie.movzx_node
   dq par_trie.movsx_node
+  dq par_trie.cmovo_node
+  dq par_trie.cmovno_node
+  dq par_trie.cmovb_node
+  dq par_trie.cmovnb_node
+  dq par_trie.cmove_node
+  dq par_trie.cmovne_node
+  dq par_trie.cmovbe_node
+  dq par_trie.cmova_node
+  dq par_trie.cmovs_node
+  dq par_trie.cmovns_node
+  dq par_trie.cmovpe_node
+  dq par_trie.cmovpo_node
+  dq par_trie.cmovl_node
+  dq par_trie.cmovge_node
+  dq par_trie.cmovle_node
+  dq par_trie.cmovg_node
+  dq par_trie.seto_node
+  dq par_trie.setno_node
+  dq par_trie.setb_node
+  dq par_trie.setnb_node
+  dq par_trie.sete_node
+  dq par_trie.setne_node
+  dq par_trie.setbe_node
+  dq par_trie.seta_node
+  dq par_trie.sets_node
+  dq par_trie.setns_node
+  dq par_trie.setpe_node
+  dq par_trie.setpo_node
+  dq par_trie.setl_node
+  dq par_trie.setge_node
+  dq par_trie.setle_node
+  dq par_trie.setg_node
+  dq par_trie.ud2_node
 
 ; lexeme trie
 lex_trie:
@@ -484,13 +517,38 @@ lex_trie:
 .c_node:
   LEX_NODE 'c', 0, 0, 1, 0, 0
     LEX_NODE 'a', 0, 0, 1, 3, 0
-      LEX_NODE 'l', 0, 0, 1, 3, 0
+      LEX_NODE 'l', 0, 0, 1, 0, 0
         LEX_NODE 'l', G_INSTR, I_CALL, 0, 0, TERM
-    LEX_NODE 'm', 0, 0, 1, 2, 0
-      LEX_NODE 'p', G_INSTR, I_CMP, 0, 0, TERM
     LEX_NODE 'x', G_REG16, R16_CX, 0, 1, TERM
     LEX_NODE 'h', G_REG8, R8_CH, 0, 1, TERM
-    LEX_NODE 'l', G_REG8, R8_CL, 0, 0, TERM
+    LEX_NODE 'l', G_REG8, R8_CL, 0, 1, TERM
+    LEX_NODE 'm', 0, 0, 1, 0, 0
+      LEX_NODE 'p', G_INSTR, I_CMP, 0, 1, TERM
+      LEX_NODE 'o', 0, 0, 1, 0, 0
+        LEX_NODE 'v', 0, 0, 1, 0, 0
+          LEX_NODE 'e', G_EINST, E_CMOVE, 0, 1, TERM
+          LEX_NODE 'z', G_EINST, E_CMOVE, 0, 1, TERM
+          LEX_NODE 'l', G_EINST, E_CMOVL, 1, 2, TERM
+            LEX_NODE 'e', G_EINST, E_CMOVLE, 0, 0, TERM
+          LEX_NODE 'g', G_EINST, E_CMOVG, 1, 2, TERM
+            LEX_NODE 'e', G_EINST, E_CMOVGE, 0, 0, TERM
+          LEX_NODE 'a', G_EINST, E_CMOVA, 1, 2, TERM
+            LEX_NODE 'e', G_EINST, E_CMOVB, 0, 0, TERM
+          LEX_NODE 'b', G_EINST, E_CMOVB, 1, 2, TERM
+            LEX_NODE 'e', G_EINST, E_CMOVBE, 0, 0, TERM
+          LEX_NODE 'c', G_EINST, E_CMOVB, 0, 1, TERM
+          LEX_NODE 's', G_EINST, E_CMOVS, 0, 1, TERM
+          LEX_NODE 'o', G_EINST, E_CMOVO, 0, 1, TERM
+          LEX_NODE 'p', G_EINST, E_CMOVPE, 1, 3, TERM
+            LEX_NODE 'o', G_EINST, E_CMOVPO, 0, 1, TERM
+            LEX_NODE 'e', G_EINST, E_CMOVPE, 0, 0, TERM
+          LEX_NODE 'n', 0, 0, 1, 0, 0
+            LEX_NODE 'e', G_EINST, E_CMOVNE, 0, 1, TERM
+            LEX_NODE 'z', G_EINST, E_CMOVNE, 0, 1, TERM
+            LEX_NODE 'c', G_EINST, E_CMOVNB, 0, 1, TERM
+            LEX_NODE 's', G_EINST, E_CMOVNS, 0, 1, TERM
+            LEX_NODE 'o', G_EINST, E_CMOVNO, 0, 1, TERM
+            LEX_NODE 'p', G_EINST, E_CMOVPO, 0, 0, TERM
 
 .j_node:
   LEX_NODE 'j', 0, 0, 1, 0, 0
@@ -595,7 +653,32 @@ lex_trie:
   LEX_NODE 's', 0, 0, 1, 0, 0
     LEX_NODE 'u', 0, 0, 1, 2, 0
       LEX_NODE 'b', G_INSTR, I_SUB, 0, 0, TERM
-    LEX_NODE 'p', G_REG16, R16_SP, 0, 0, TERM
+    LEX_NODE 'p', G_REG16, R16_SP, 0, 1, TERM
+    LEX_NODE 'e', 0, 0, 1, 0, 0
+      LEX_NODE 't', 0, 0, 1, 0, 0
+        LEX_NODE 'e', G_EINST, E_SETE, 0, 1, TERM
+        LEX_NODE 'z', G_EINST, E_SETE, 0, 1, TERM
+        LEX_NODE 'l', G_EINST, E_SETL, 1, 2, TERM
+          LEX_NODE 'e', G_EINST, E_SETLE, 0, 0, TERM
+        LEX_NODE 'g', G_EINST, E_SETG, 1, 2, TERM
+          LEX_NODE 'e', G_EINST, E_SETGE, 0, 0, TERM
+        LEX_NODE 'a', G_EINST, E_SETA, 1, 2, TERM
+          LEX_NODE 'e', G_EINST, E_SETB, 0, 0, TERM
+        LEX_NODE 'b', G_EINST, E_SETB, 1, 2, TERM
+          LEX_NODE 'e', G_EINST, E_SETBE, 0, 0, TERM
+        LEX_NODE 'c', G_EINST, E_SETB, 0, 1, TERM
+        LEX_NODE 's', G_EINST, E_SETS, 0, 1, TERM
+        LEX_NODE 'o', G_EINST, E_SETO, 0, 1, TERM
+        LEX_NODE 'p', G_EINST, E_SETPE, 1, 3, TERM
+          LEX_NODE 'o', G_EINST, E_SETPO, 0, 1, TERM
+          LEX_NODE 'e', G_EINST, E_SETPE, 0, 0, TERM
+        LEX_NODE 'n', 0, 0, 1, 0, 0
+          LEX_NODE 'e', G_EINST, E_SETNE, 0, 1, TERM
+          LEX_NODE 'z', G_EINST, E_SETNE, 0, 1, TERM
+          LEX_NODE 'c', G_EINST, E_SETNB, 0, 1, TERM
+          LEX_NODE 's', G_EINST, E_SETNS, 0, 1, TERM
+          LEX_NODE 'o', G_EINST, E_SETNO, 0, 1, TERM
+          LEX_NODE 'p', G_EINST, E_SETPO, 0, 0, TERM
 
 .l_node:
   LEX_NODE 'l', 0, 0, 1, 0, 0
@@ -606,6 +689,11 @@ lex_trie:
   LEX_NODE 'r', 0, 0, 1, 0, 0
     LEX_NODE 'e', 0, 0, 1, 0, 0
       LEX_NODE 't', G_INSTR, I_RET, 0, 0, TERM
+
+.u_node:
+  LEX_NODE 'u', 0, 0, 1, 0, 0
+    LEX_NODE 'd', 0, 0, 1, 0, 0
+      LEX_NODE '2', G_EINST, E_UD2, 0, 0, TERM
 
 ; token trie
 par_trie:
@@ -962,3 +1050,198 @@ par_trie:
   PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
     PAR_NODE G_CTRL, 0xBE, 0, 1, MEM8_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
     PAR_NODE G_REG8, 0xBE, 0, 0, REGFIRST_BIT, OPSIZE + TWOBYTE + MODRM + TERM
+
+.cmovo_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x40, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x40, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x40, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x40, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovno_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x41, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x41, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x41, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x41, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovb_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x42, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x42, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x42, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x42, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovnb_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x43, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x43, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x43, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x43, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmove_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x44, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x44, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x44, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x44, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovne_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x45, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x45, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x45, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x45, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovbe_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x46, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x46, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x46, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x46, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmova_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x47, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x47, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x47, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x47, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovs_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x48, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x48, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x48, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x48, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovns_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x49, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x49, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x49, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x49, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovpe_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x4A, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4A, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x4A, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4A, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovpo_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x4B, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4B, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x4B, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4B, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovl_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x4C, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4C, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x4C, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4C, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovge_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x4D, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4D, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x4D, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4D, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovle_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x4E, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4E, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x4E, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4E, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.cmovg_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0x4F, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4F, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG16, 0x4F, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x4F, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.seto_node:
+  PAR_NODE G_REG8, 0x90, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x90, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setno_node:
+  PAR_NODE G_REG8, 0x91, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x91, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setb_node:
+  PAR_NODE G_REG8, 0x92, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x92, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setnb_node:
+  PAR_NODE G_REG8, 0x93, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x93, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.sete_node:
+  PAR_NODE G_REG8, 0x94, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x94, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setne_node:
+  PAR_NODE G_REG8, 0x95, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x95, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setbe_node:
+  PAR_NODE G_REG8, 0x96, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x96, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.seta_node:
+  PAR_NODE G_REG8, 0x97, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x97, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.sets_node:
+  PAR_NODE G_REG8, 0x98, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x98, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setns_node:
+  PAR_NODE G_REG8, 0x99, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x99, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setpe_node:
+  PAR_NODE G_REG8, 0x9A, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x9A, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setpo_node:
+  PAR_NODE G_REG8, 0x9B, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x9B, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setl_node:
+  PAR_NODE G_REG8, 0x9C, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x9C, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setge_node:
+  PAR_NODE G_REG8, 0x9D, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x9D, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setle_node:
+  PAR_NODE G_REG8, 0x9E, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x9E, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.setg_node:
+  PAR_NODE G_REG8, 0x9F, 0, 1, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x9F, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+
+.ud2_node:
+  PAR_NODE G_CTRL, 0x0B, 0, 0, NOP_BIT, TWOBYTE + TERM
