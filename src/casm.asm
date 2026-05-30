@@ -256,7 +256,7 @@ E_STYLE_MSG_ST_SZ     = $ - e_style_msg_st
 e_style_msg_en     db "%", LF
 E_STYLE_MSG_EN_SZ     = $ - e_style_msg_en
 
-e_rank_msg_st      db "[Rank]: "
+e_rank_msg_st      db "[Rank]:  "
 E_RANK_MSG_ST_SZ      = $ - e_rank_msg_st
 
 e_rank_msg_en      db LF
@@ -292,11 +292,11 @@ do_show_rank   db 0
 
 ; ranks
 st_p           db ESC, '[43m', " P ", ESC, '[0m'
-st_s           db ESC, '[31m', " S ", ESC, '[0m'
-st_a           db ESC, '[35m', " A ", ESC, '[0m'
-st_b           db ESC, '[33m', " B ", ESC, '[0m'
-st_c           db ESC, '[32m', " C ", ESC, '[0m'
-st_d           db ESC, '[34m', " D ", ESC, '[0m'
+st_s           db ESC, '[31m', "S  ", ESC, '[0m'
+st_a           db ESC, '[35m', "A  ", ESC, '[0m'
+st_b           db ESC, '[33m', "B  ", ESC, '[0m'
+st_c           db ESC, '[32m', "C  ", ESC, '[0m'
+st_d           db ESC, '[34m', "D  ", ESC, '[0m'
 RANK_SZ           = $ - st_d
 
 ; pointers
