@@ -590,6 +590,7 @@ lex_trie:
             LEX_NODE 'e', G_EINST, E_CMOVNE, 0, 1, TERM
             LEX_NODE 'z', G_EINST, E_CMOVNE, 0, 1, TERM
             LEX_NODE 'c', G_EINST, E_CMOVNB, 0, 1, TERM
+            LEX_NODE 'b', G_EINST, E_CMOVNB, 0, 1, TERM
             LEX_NODE 's', G_EINST, E_CMOVNS, 0, 1, TERM
             LEX_NODE 'o', G_EINST, E_CMOVNO, 0, 1, TERM
             LEX_NODE 'p', G_EINST, E_CMOVPO, 0, 0, TERM
@@ -618,6 +619,7 @@ lex_trie:
       LEX_NODE 'e', G_EINST, E_JNE, 0, 1, TERM
       LEX_NODE 'z', G_EINST, E_JNZ, 0, 1, TERM
       LEX_NODE 'c', G_EINST, E_JNC, 0, 1, TERM
+      LEX_NODE 'b', G_EINST, E_JNC, 0, 1, TERM
       LEX_NODE 's', G_EINST, E_JNS, 0, 1, TERM
       LEX_NODE 'o', G_EINST, E_JNO, 0, 1, TERM
       LEX_NODE 'p', G_EINST, E_JNP, 0, 0, TERM
@@ -720,6 +722,7 @@ lex_trie:
           LEX_NODE 'e', G_EINST, E_SETNE, 0, 1, TERM
           LEX_NODE 'z', G_EINST, E_SETNE, 0, 1, TERM
           LEX_NODE 'c', G_EINST, E_SETNB, 0, 1, TERM
+          LEX_NODE 'b', G_EINST, E_SETNB, 0, 1, TERM
           LEX_NODE 's', G_EINST, E_SETNS, 0, 1, TERM
           LEX_NODE 'o', G_EINST, E_SETNO, 0, 1, TERM
           LEX_NODE 'p', G_EINST, E_SETPO, 0, 0, TERM
