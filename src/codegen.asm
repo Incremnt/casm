@@ -58,6 +58,74 @@ dont_gen_elf:
   SYSCALL_3 SYS_WRITE, STDERR, e_bytes_msg_en, E_BYTES_MSG_EN_SZ ;
 
 dont_show_bytes:
+  cmp       byte [do_show_rank], 0                               ;
+  je        dont_show_style                                      ;
+  mov       rax, 100                                             ; calculate style points percentage
+  mov       rbp, qword [current_line]                            ;
+  xor       rdx, rdx                                             ;
+  dec       rbp                                                  ;
+  div       rbp                                                  ;
+  mov       rcx, rax                                             ;
+  mov       rax, qword [style_points]                            ;
+  mov       rbp, qword [current_line]                            ;
+  xor       rdx, rdx                                             ;
+  div       rbp                                                  ;
+  test      rax, rax                                             ;
+  jnz       .p_rank_overflow                                     ;
+  mov       rax, rdx                                             ;
+  xor       rdx, rdx                                             ;
+  mul       rcx                                                  ;
+  cmp       rax, 25                                              ; ranks:
+  jl        .d_rank                                              ; P 100-75%
+  cmp       rax, 40                                              ; S 75-70%
+  jl        .c_rank                                              ; A 70-65%
+  cmp       rax, 65                                              ; B 65-40%
+  jl        .b_rank                                              ; C 40-25%
+  cmp       rax, 70                                              ; D 25-0%
+  jl        .a_rank                                              ;
+  cmp       rax, 75                                              ;
+  jl        .s_rank                                              ;
+  jmp       .p_rank                                              ;
+.p_rank_overflow:
+  mov       rax, 100                                             ;
+.p_rank:
+  mov       qword [rank_ptr], st_p                               ;
+  jmp       .write_style                                         ;
+.s_rank:
+  mov       qword [rank_ptr], st_s                               ;
+  jmp       .write_style                                         ;
+.a_rank:
+  mov       qword [rank_ptr], st_a                               ;
+  jmp       .write_style                                         ;
+.b_rank:
+  mov       qword [rank_ptr], st_b                               ;
+  jmp       .write_style                                         ;
+.c_rank:
+  mov       qword [rank_ptr], st_c                               ;
+  jmp       .write_style                                         ;
+.d_rank:
+  mov       qword [rank_ptr], st_d                               ;
+  jmp       .write_style                                         ;
+.write_style:
+  mov       rcx, STYLE_BUF_SZ - 1                                ;
+.convert_style:
+  xor       rdx, rdx                                             ;
+  mov       rbp, 10                                              ;
+  div       rbp                                                  ;
+  add       dl, '0'                                              ;
+  mov       byte [style_buf + rcx], dl                           ;
+  dec       rcx                                                  ;
+  test      rax, rax                                             ;
+  jnz       .convert_style                                       ;
+  SYSCALL_3 SYS_WRITE, STDERR, e_style_msg_st, E_STYLE_MSG_ST_SZ ;
+  SYSCALL_3 SYS_WRITE, STDERR, style_buf, STYLE_BUF_SZ           ;
+  SYSCALL_3 SYS_WRITE, STDERR, e_style_msg_en, E_STYLE_MSG_EN_SZ ;
+  SYSCALL_3 SYS_WRITE, STDERR, e_rank_msg_st, E_RANK_MSG_ST_SZ   ;
+  mov       rsi, qword [rank_ptr]                                ;
+  SYSCALL_3 SYS_WRITE, STDERR, rsi, RANK_SZ                      ;
+  SYSCALL_3 SYS_WRITE, STDERR, e_rank_msg_en, E_RANK_MSG_EN_SZ   ;
+
+dont_show_style:
   mov       rsi, qword [par_irbuf_ptr]                           ; write opcodes
   mov       rcx, r14                                             ;
   sub       rcx, rsi                                             ;
