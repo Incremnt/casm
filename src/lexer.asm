@@ -66,6 +66,7 @@ lexer:
   mov       word [rbx + 's' * 2], lex_trie.s_node - lex_trie         ;
   mov       word [rbx + 'l' * 2], lex_trie.l_node - lex_trie         ;
   mov       word [rbx + 'r' * 2], lex_trie.r_node - lex_trie         ;
+  mov       word [rbx + 'u' * 2], lex_trie.u_node - lex_trie         ;
   mov       word [rbx + '.' * 2], lex_trie.sec_node - lex_trie       ;
 
   mov       rcx, valid_char_tbl          ; init valid characters table
