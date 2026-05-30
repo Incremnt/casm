@@ -76,14 +76,14 @@ dont_show_bytes:
   xor       rdx, rdx                                             ;
   mul       rcx                                                  ;
   cmp       rax, 25                                              ; ranks:
-  jl        .d_rank                                              ; P 100-80%
-  cmp       rax, 40                                              ; S 80-75%
-  jl        .c_rank                                              ; A 75-65%
+  jl        .d_rank                                              ; P 100-85%
+  cmp       rax, 40                                              ; S 85-70%
+  jl        .c_rank                                              ; A 70-65%
   cmp       rax, 65                                              ; B 65-40%
   jl        .b_rank                                              ; C 40-25%
-  cmp       rax, 75                                              ; D 25-0%
+  cmp       rax, 70                                              ; D 25-0%
   jl        .a_rank                                              ;
-  cmp       rax, 80                                              ;
+  cmp       rax, 85                                              ;
   jl        .s_rank                                              ;
   jmp       .p_rank                                              ;
 .p_rank_overflow:
