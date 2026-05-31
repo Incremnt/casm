@@ -83,7 +83,7 @@ lexer:
   mov       byte [rcx + ']'], VALID      ;
 
   mov       r13, LEX_IRBUF_SIZE          ; init pointers
-  lea       r9, [r14 + r13 - 8]          ;
+  lea       r9, [r14 + r13 - 1]          ;
   mov       r15, lex_trie                ;
 
 next_lex:
@@ -377,7 +377,7 @@ exp_ir_buf:
   mov       rcx, valid_char_tbl              ; restore valid characters table pointer
   mov       rsi, qword [lex_irbuf_ptr]       ;
   lea       r13, [r13 * 2]                   ; will allocate x2 more memory next time
-  lea       r9, [rsi + r13 - 8]              ; update r9
+  lea       r9, [rsi + r13 - 1]              ; update r9
   pop       rsi                              ; restore rsi
   ret                                        ;
 
