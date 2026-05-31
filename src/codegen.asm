@@ -64,8 +64,13 @@ dont_show_bytes:
   mov       rbp, qword [current_line]                            ;
   xor       rdx, rdx                                             ;
   dec       rbp                                                  ;
+  cmp       rbp, 101                                             ;
+  jl        .not_float                                           ;
+  xchg      rax, rbp                                             ;
+.not_float:
   div       rbp                                                  ;
   mov       rcx, rax                                             ;
+  cmovz     rcx, rdx                                             ;
   mov       rax, qword [style_points]                            ;
   mov       rbp, qword [current_line]                            ;
   xor       rdx, rdx                                             ;
@@ -74,7 +79,13 @@ dont_show_bytes:
   jnz       .p_rank_overflow                                     ;
   mov       rax, rdx                                             ;
   xor       rdx, rdx                                             ;
+  cmp       qword [current_line], 102                            ;
+  jge       .float                                               ;
   mul       rcx                                                  ;
+  jmp       .float_skip                                          ;
+.float:
+  div       rcx                                                  ;
+.float_skip:
   cmp       rax, 25                                              ; ranks:
   jl        .d_rank                                              ; P 100-85%
   cmp       rax, 40                                              ; S 85-70%
