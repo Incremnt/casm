@@ -70,7 +70,6 @@ dont_show_bytes:
 .not_float:
   div       rbp                                                  ;
   mov       rcx, rax                                             ;
-  cmovz     rcx, rdx                                             ;
   mov       rax, qword [style_points]                            ;
   mov       rbp, qword [current_line]                            ;
   xor       rdx, rdx                                             ;
