@@ -85,6 +85,8 @@ dont_show_bytes:
 .float:
   div       rcx                                                  ;
 .float_skip:
+  cmp       rax, 100                                             ;
+  jg        .p_rank_overflow                                     ;
   cmp       rax, 25                                              ; ranks:
   jl        .d_rank                                              ; P 100-85%
   cmp       rax, 40                                              ; S 85-70%
