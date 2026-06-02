@@ -343,18 +343,20 @@ write_number:
   xor       rdi, rdi                         ; rdi - converted number buffer
   movzx     rsi, byte [r12]                  ;
 .convert_num:
-  lea       esi, [esi - '0']                 ; convert character to number
+  lea       rsi, [rsi - '0']                 ; convert character to number
   cmp       sil, 10                          ; error if it is not number character
   jge       unk_tkn_err                      ;
-  lea       edi, [edi + edi * 4]             ;
-  shl       edi, 1                           ;
-  lea       edi, [edi + esi]                 ; error if number is longer than 4 bytes
-  jc        long_num_err                     ;
+  lea       rdi, [rdi + rdi * 4]             ;
+  shl       rdi, 1                           ;
+  lea       rdi, [rdi + rsi]                 ; error if number is longer than 4 bytes
   inc       r12                              ;
   movzx     rsi, byte [r12]                  ;
   cmp       byte [rbp + rsi], NUM_DEL        ; stop converting if found not-number character
   je        .convert_num                     ;
-  mov       esi, edi                         ;
+  mov       rsi, rdi                         ;
+  shr       rdi, 32                          ;
+  test      rdi, rdi                         ;
+  jnz       long_num_err                     ;
   mov       rdi, 4                           ;
 .write_insides:
   cmp       r14, r9                          ;
@@ -363,12 +365,12 @@ write_number:
   call      exp_ir_buf                       ;
   pop       rdi                              ;
 .skip_call2:
-  test      esi, esi                         ; write converted number
+  test      rsi, rsi                         ; write converted number
   jz        end_num_write                    ;
   mov       byte [r14], sil                  ;
   inc       r14                              ;
   dec       rdi                              ;
-  shr       esi, 8                           ;
+  shr       rsi, 8                           ;
   jmp       .write_insides                   ;
 end_num_write:
   lea       r14, [r14 + rdi]                 ; make number 4 bytes long
