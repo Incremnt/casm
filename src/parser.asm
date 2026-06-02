@@ -48,6 +48,8 @@ ctrl_group:
   mov       r13, qword [labelbuf_ptr]              ;
   mov       r12, qword [rdi]                       ;
   mov       r14, qword [rdi + 8]                   ;
+  mov       rax, qword [rdi + 16]                  ;
+  mov       qword [current_line], rax              ;
   mov       r8, r12                                ;
 .write_del_addr:
   cmp       qword [rdi], 0                         ;
@@ -63,7 +65,7 @@ ctrl_group:
   jne       .sec_next_label                        ;
   mov       esi, dword [r13 + 1]                   ;
   add       dword [r14], esi                       ;
-  add       rdi, 16                                ;
+  add       rdi, 24                                ;
   jmp       .next_deladdr                          ;
 .sec_next_label:
   cmp       byte [r13], 0                          ;
@@ -147,14 +149,22 @@ ctrl_group:
   lea       r12, [r12 + 6]                         ;
   jmp       parse_ir                               ;
 .not_custom_entry:
+  mov       rdx, 0xFFFFFF00                        ;
+  mov       r8, 0xFFFF0000                         ;
+  mov       r9, 0x00000000                         ;
   mov       rcx, 1                                 ; write 1, 2 or 4 bytes of number
   mov       rdi, 2                                 ;
   mov       rsi, 4                                 ;
   test      rbx, IMM16_BIT                         ;
   cmovnz    rcx, rdi                               ;
+  cmovnz    rdx, r8                                ;
   test      rbx, IMM32_BIT                         ;
   cmovnz    rcx, rsi                               ;
+  cmovnz    rdx, r9                                ;
   lea       r12, [r12 + 2]                         ;
+  mov       esi, dword [r12]                       ;
+  test      esi, edx                               ;
+  jnz       op_sz_not_match_err                    ;
   lea       rdx, [r12 + 4]                         ;
 .write_num:
   mov       al, byte [r12]                         ;
@@ -520,7 +530,9 @@ ctrl_group:
   add       rdi, qword [deladr_offset]             ;
   mov       qword [rdi], r12                       ;
   mov       qword [rdi + 8], r14                   ;
-  add       qword [deladr_offset], 16              ;
+  mov       rax, qword [current_line]              ;
+  mov       qword [rdi + 16], rax                  ;
+  add       qword [deladr_offset], 24              ;
   lea       r14, [r14 + 4]                         ;
   add       qword [current_ptr], 4                 ;
   add       r15d, 4                                ;
@@ -575,7 +587,9 @@ ctrl_group:
   mov       qword [rdi], r12                       ;
   mov       rsi, qword [sib_offset_ptr]            ;
   mov       qword [rdi + 8], rsi                   ;
-  add       qword [deladr_offset], 16              ;
+  mov       rax, qword [current_line]              ;
+  mov       qword [rdi + 16], rax                  ;
+  add       qword [deladr_offset], 24              ;
 .sib_del_skip:
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ;
