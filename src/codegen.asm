@@ -53,9 +53,9 @@ dont_gen_elf:
   dec       rcx                                                  ;
   test      rax, rax                                             ;
   jnz       .convert_file_size                                   ;
-  SYSCALL_3 SYS_WRITE, STDERR, e_bytes_msg_st, E_BYTES_MSG_ST_SZ ;
-  SYSCALL_3 SYS_WRITE, STDERR, bytes_buf, BYTES_BUF_SZ           ;
-  SYSCALL_3 SYS_WRITE, STDERR, e_bytes_msg_en, E_BYTES_MSG_EN_SZ ;
+  SYSCALL_3 SYS_WRITE, STDOUT, e_bytes_msg_st, E_BYTES_MSG_ST_SZ ;
+  SYSCALL_3 SYS_WRITE, STDOUT, bytes_buf, BYTES_BUF_SZ           ;
+  SYSCALL_3 SYS_WRITE, STDOUT, e_bytes_msg_en, E_BYTES_MSG_EN_SZ ;
 
 dont_show_bytes:
   cmp       byte [do_show_rank], 0                               ;
@@ -129,13 +129,13 @@ dont_show_bytes:
   dec       rcx                                                  ;
   test      rax, rax                                             ;
   jnz       .convert_style                                       ;
-  SYSCALL_3 SYS_WRITE, STDERR, e_style_msg_st, E_STYLE_MSG_ST_SZ ;
-  SYSCALL_3 SYS_WRITE, STDERR, style_buf, STYLE_BUF_SZ           ;
-  SYSCALL_3 SYS_WRITE, STDERR, e_style_msg_en, E_STYLE_MSG_EN_SZ ;
-  SYSCALL_3 SYS_WRITE, STDERR, e_rank_msg_st, E_RANK_MSG_ST_SZ   ;
+  SYSCALL_3 SYS_WRITE, STDOUT, e_style_msg_st, E_STYLE_MSG_ST_SZ ;
+  SYSCALL_3 SYS_WRITE, STDOUT, style_buf, STYLE_BUF_SZ           ;
+  SYSCALL_3 SYS_WRITE, STDOUT, e_style_msg_en, E_STYLE_MSG_EN_SZ ;
+  SYSCALL_3 SYS_WRITE, STDOUT, e_rank_msg_st, E_RANK_MSG_ST_SZ   ;
   mov       rsi, qword [rank_ptr]                                ;
-  SYSCALL_3 SYS_WRITE, STDERR, rsi, RANK_SZ                      ;
-  SYSCALL_3 SYS_WRITE, STDERR, e_rank_msg_en, E_RANK_MSG_EN_SZ   ;
+  SYSCALL_3 SYS_WRITE, STDOUT, rsi, RANK_SZ                      ;
+  SYSCALL_3 SYS_WRITE, STDOUT, e_rank_msg_en, E_RANK_MSG_EN_SZ   ;
 
 dont_show_style:
   mov       rsi, qword [par_irbuf_ptr]                           ; write opcodes
