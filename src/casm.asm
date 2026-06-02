@@ -294,17 +294,18 @@ st_d           db ESC, '[34m', "D  ", ESC, '[0m'
 RANK_SZ           = $ - st_d
 
 ; pointers
-lex_irbuf_ptr  dq 0
-par_irbuf_ptr  dq 0
-phdrbuf_ptr    dq 0
-labelbuf_ptr   dq 0
-deladrbuf_ptr  dq 0
-modrm_ptr      dq 0
-sib_ptr        dq 0
-sib_offset_ptr dq 0
-deladr_offset  dq 0
-rank_ptr       dq 0
-current_ptr    dd 0x08048034
+lex_irbuf_ptr        dq 0
+par_irbuf_ptr        dq 0
+phdrbuf_ptr          dq 0
+labelbuf_ptr         dq 0
+deladrbuf_ptr        dq 0
+modrm_ptr            dq 0
+sib_ptr              dq 0
+sib_offset_ptr       dq 0
+deladr_offset        dq 0
+labelbuf_slot_offset dq 0
+rank_ptr             dq 0
+current_ptr          dd 0x08048034
 
 ; file descriptors
 output_fd  dq 0
