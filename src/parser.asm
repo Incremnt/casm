@@ -43,6 +43,7 @@ ctrl_group:
 
 .handle_eof:
   mov       rdi, qword [deladrbuf_ptr]             ;
+  push      qword [current_line]                   ;
   push      r14                                    ;
 .next_deladdr:
   mov       r13, qword [labelbuf_ptr]              ;
@@ -80,6 +81,7 @@ ctrl_group:
   jmp       .write_del_addr                        ;
 .end_deladr_write:
   pop       r14                                    ;
+  pop       qword [current_line]                   ;
   cmp       dword [custom_entry], 0                ;
   je        .default_entry                         ; write custom entry if there was .entry directive
   mov       edi, dword [custom_entry]              ;
