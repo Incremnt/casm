@@ -298,6 +298,7 @@ write_string:
 .skip_call:
   mov       byte [r14 + 1], C_STR            ; set string start IR
   lea       r14, [r14 + 2]                   ;
+  mov       r8, qword [current_line]         ;
 .write_insides:
   inc       r12                              ; write characters inside of string
   movzx     rax, byte [r12]                  ;
@@ -313,9 +314,14 @@ write_string:
 .skip_call2:
   cmp       rax, rsi                         ; end if found " or '
   je        write_strend_ir                  ;
+  cmp       rax, NUL                         ;
+  je        .invalid_char                    ;
   mov       byte [r14], al                   ;
   inc       r14                              ;
   jmp       .write_insides                   ;
+.invalid_char:
+  mov       qword [current_line], r8         ;
+  jmp       invalid_char_err                 ;
 write_strend_ir:
   cmp       r14, r9                          ;
   jl        .skip_call                       ;
