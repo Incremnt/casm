@@ -453,23 +453,12 @@ ctrl_group:
   xor       rbx, LABEL_BIT                         ;
   inc       qword [style_points]                   ; labels are cool
   mov       r13, qword [labelbuf_ptr]              ;
+  add       r13, qword [labelbuf_slot_offset]      ;
   lea       r12, [r12 + 2]                         ;
-  mov       rdi, 1                                 ;
-.find_slot:
-  cmp       byte [r13], 0                          ;
-  je        .skip_address                          ;
-  inc       r13                                    ;
-  xor       rdi, rdi                               ;
-  jmp       .find_slot                             ;
-.skip_address:
-  cmp       rdi, 1                                 ; don't skip 32-bit address if label isn't first
-  je        .write_label                           ;
-  lea       r13, [r13 + 5]                         ;
-  cmp       byte [r13], 0                          ;
-  jne       .find_slot                             ;
 .write_label:
   mov       al, byte [r12]                         ;
   mov       byte [r13], al                         ;
+  inc       qword [labelbuf_slot_offset]           ;
   cmp       byte [r12 + 2], C_LBL                  ;
   je        .end_label_write                       ;
   inc       r12                                    ;
@@ -479,6 +468,7 @@ ctrl_group:
   lea       r12, [r12 + 3]                         ;
   mov       edi, dword [current_ptr]               ;
   mov       dword [r13 + 2], edi                   ;
+  add       qword [labelbuf_slot_offset], 5        ;
   jmp       parse_ir                               ;
 
 .handle_address:
