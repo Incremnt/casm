@@ -54,7 +54,9 @@ parse_flags:
   je        .style_flag                                                    ;
   cmp       al, '-'                                                        ;
   je        usage_err                                                      ;
-  mov       rdx, 1                                                         ;
+  inc       rdx                                                            ;
+  cmp       rdx, 2                                                         ;
+  jg        usage_err                                                      ;
   cmp       rcx, qword [rsp]                                               ;
   je        .end_flags_parse                                               ;
   inc       rcx                                                            ;
