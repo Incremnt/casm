@@ -280,6 +280,8 @@ write_long_del:
   cmp       byte [rbp + rax], MUL_DEL        ;
   je        .end_write                       ;
   cmp       byte [rbp + rax], IGN_DEL        ;
+  je        .end_write                       ;
+  cmp       al, NUL                          ;
   jne       .write_insides                   ;
 .end_write:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
@@ -390,6 +392,17 @@ exp_ir_buf:
   ret                                        ;
 
 handle_eof:
+  mov       ax, word [r14 - 2]                            ; write newline IR if it wasn't before EOF
+  xchg      ah, al                                        ;
+  cmp       ax, C_LF                                      ;
+  je        .dont_write_lf                                ;
+  cmp       r14, r9                                       ;
+  jl        .skip_call                                    ;
+  call      exp_ir_buf                                    ;
+.skip_call:
+  mov       byte [r14 + 1], C_LF                          ;
+  lea       r14, [r14 + 2]                                ;
+.dont_write_lf:
   lea       r14, [r14 + 2]                                ; r14 - pointer to parser IR buffer
   lea       rbp, [r14 + r13 * 8]                          ; rbp - pointer to phdr buffer
   lea       rsi, [r14 + r13 * 8 + PHDRBUF_SIZE]           ; allocate memory for buffers
