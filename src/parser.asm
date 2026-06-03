@@ -181,6 +181,12 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_sib_num:
+  test      rbx, PLUS_BIT + MINUS_BIT + MULT_BIT   ;
+  jz        invalid_expression_err                 ;
+  mov       ax, word [r12 + 6]                     ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_MULT                             ;
+  je        invalid_expression_err                 ;
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
   and       rbx, rdx                               ;
@@ -266,6 +272,8 @@ ctrl_group:
   jmp       .write_all_str                         ;
 
 .handle_sib_str:
+  test      rbx, PLUS_BIT + MINUS_BIT              ;
+  jz        invalid_expression_err                 ;
   add       qword [style_points], 2                ; strings in memory expressions are very cool
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
@@ -294,6 +302,10 @@ ctrl_group:
 .skip_str_neg:
   add       edx, dword [rdi]                       ;
   mov       dword [rdi], edx                       ;
+  mov       ax, word [r12 + 2]                     ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_MULT                             ;
+  je        invalid_expression_err                 ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -319,10 +331,13 @@ ctrl_group:
   test      rbx, MINUS_BIT + MULT_BIT              ;
   jnz       invalid_expression_err                 ;
   test      rbx, PLUS_BIT                          ;
-  jnz       .skip_modset                           ;
+  jz        invalid_expression_err                 ;
+  test      rbx, SIBRFIRST_BIT                     ;
+  jz        .skip_modset                           ;
   mov       rdi, qword [modrm_ptr]                 ;
   and       byte [rdi], 00111000b                  ; unset mod & r/m fields
   or        byte [rdi], 00000100b                  ; set SIB mode
+  xor       rbx, SIBRFIRST_BIT                     ;
 .skip_modset:
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
@@ -401,13 +416,20 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_memstart:
-  push      rbx                                    ; save parser bits in stack
-  or        rbx, IMM32_BIT + BASFIRST_BIT          ;
-  inc       qword [style_points]                   ; memory expressions are cool
-  lea       r12, [r12 + 2]                         ;
-  jmp       parse_ir                               ;
+  push      rbx                                           ; save parser bits in stack
+  or        rbx, IMM32_BIT + BASFIRST_BIT + SIBRFIRST_BIT ;
+  or        rbx, PLUS_BIT                                 ;
+  inc       qword [style_points]                          ; memory expressions are cool
+  mov       ax, word [r12 + 2]                            ;
+  xchg      ah, al                                        ;
+  cmp       ax, C_MULT                                    ;
+  je        invalid_expression_err                        ;
+  lea       r12, [r12 + 2]                                ;
+  jmp       parse_ir                                      ;
 
 .handle_memend:
+  test      rbx, PLUS_BIT + MINUS_BIT + MULT_BIT   ;
+  jnz       invalid_expression_err                 ;
   call      normal_mode                            ;
   call      modrm_mode                             ;
   pop       rbx                                    ; restore parser bits
@@ -539,6 +561,8 @@ ctrl_group:
 .handle_sib_address:
   test      rbx, MULT_BIT + MINUS_BIT              ;
   jnz       invalid_expression_err                 ;
+  test      rbx, PLUS_BIT                          ;
+  jz        invalid_expression_err                 ;
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
   and       rbx, rdx                               ;
