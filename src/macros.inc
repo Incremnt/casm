@@ -330,10 +330,10 @@ R16_DI  = 7
 
 ; 8-bit registers
 R8_AL = 0
-R8_BL = 1
-R8_CL = 2
-R8_DL = 3
+R8_CL = 1
+R8_DL = 2
+R8_BL = 3
 R8_AH = 4
-R8_BH = 5
-R8_CH = 6
-R8_DH = 7
+R8_CH = 5
+R8_DH = 6
+R8_BH = 7
