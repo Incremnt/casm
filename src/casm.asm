@@ -664,8 +664,8 @@ lex_trie:
   LEX_NODE 'd', 0, 0, 1, 0, 0
     LEX_NODE 'l', G_REG8, R8_DL, 0, 1, TERM
     LEX_NODE 'h', G_REG8, R8_DH, 0, 1, TERM
-    LEX_NODE 'x', G_REG8, R16_DX, 0, 1, TERM
-    LEX_NODE 'i', G_REG8, R16_DI, 0, 1, TERM
+    LEX_NODE 'x', G_REG16, R16_DX, 0, 1, TERM
+    LEX_NODE 'i', G_REG16, R16_DI, 0, 1, TERM
     LEX_NODE 'b', G_DIR, D_DB, 0, 1, TERM
     LEX_NODE 'd', G_DIR, D_DD, 0, 1, TERM
     LEX_NODE 'w', G_DIR, D_DW, 1, 4, TERM
