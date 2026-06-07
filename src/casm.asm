@@ -107,9 +107,9 @@ parse_flags:
   push      rbp                                                            ;
   lea       r14, [rbp + rax + 2]                                           ; IR buffer pointer in r14
   lea       rbp, [rbp + rax + LEX_IRBUF_SIZE + 2]                          ;
-  SYSCALL_1 SYS_BRK, rbp                                                   ; allocate memory for file
   cmp       rax, rbp                                                       ;
   je        brk_err                                                        ; handle brk error
+  SYSCALL_1 SYS_BRK, rbp                                                   ; allocate memory for file
   mov       qword [lex_irbuf_ptr], r14                                     ; save r14 in memory
   pop       rbp                                                            ;
 
