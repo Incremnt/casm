@@ -108,8 +108,8 @@ parse_flags:
   lea       r14, [rbp + rax + 2]                                           ; IR buffer pointer in r14
   lea       rbp, [rbp + rax + LEX_IRBUF_SIZE + 2]                          ;
   SYSCALL_1 SYS_BRK, rbp                                                   ; allocate memory for file
-  test      rax, rbp                                                       ;
-  jz        brk_err                                                        ; handle brk error
+  cmp       rax, rbp                                                       ;
+  je        brk_err                                                        ; handle brk error
   mov       qword [lex_irbuf_ptr], r14                                     ; save r14 in memory
   pop       rbp                                                            ;
 
@@ -118,8 +118,8 @@ parse_flags:
   js        lseek_err                                                      ;
 
   SYSCALL_3 SYS_READ, rbx, r12, rbp                                        ; read source code from input file
-  test      rax, rbp                                                       ; handle code read error
-  jz        read_err                                                       ;
+  test      rax, rax                                                       ; handle code read error
+  js        read_err                                                       ;
 
   SYSCALL_1 SYS_CLOSE, rbx                                                 ; close input file
 
