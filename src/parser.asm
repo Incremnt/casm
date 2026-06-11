@@ -65,8 +65,16 @@ ctrl_group:
   cmp       byte [r13], 0                          ;
   jne       .sec_next_label                        ;
   mov       esi, dword [r13 + 1]                   ;
+  cmp       byte [rdi + 24], '-'                   ;
+  jne       .skip_addr_neg                         ;
+  neg       esi
+.skip_addr_neg:
+  cmp       byte [rdi + 24], 'E'                   ;
+  jne       .skip_deladdr_entry                    ;
+  mov       dword [custom_entry], esi              ;
+.skip_deladdr_entry:
   add       dword [r14], esi                       ;
-  add       rdi, 24                                ;
+  add       rdi, 25                                ;
   jmp       .next_deladdr                          ;
 .sec_next_label:
   cmp       byte [r13], 0                          ;
@@ -234,7 +242,11 @@ ctrl_group:
   cmovnz    rcx, rsi                               ;
   test      rbx, IMM32_BIT                         ;
   cmovnz    rcx, rdi                               ;
-  lea       rdx, [r12 + rcx]                       ;
+  xor       rdx, rdx                               ;
+  mov       ax, word [r12]                         ;
+  xchg      ah, al                                 ; fix endianess
+  cmp       ax, C_STR                              ;
+  je        .skip_str_write                        ;
 .write_str:
   mov       al, byte [r12]                         ;
   mov       byte [r14], al                         ;
@@ -246,14 +258,18 @@ ctrl_group:
   inc       dword [current_ptr]                    ;
   inc       r12                                    ;
   inc       r14                                    ;
-  dec       rcx                                    ;
-  test      rcx, rcx                               ;
-  jnz       .write_str                             ;
-  mov       r12, rdx                               ;
+  inc       rdx                                    ;
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ; fix endianess
   cmp       ax, C_STR                              ;
-  jne       op_sz_not_match_err                    ; handle operand size error
+  jne       .write_str                             ;
+.skip_str_write:
+  cmp       rdx, rcx                               ;
+  jg        op_sz_not_match_err                    ;
+  sub       rcx, rdx                               ;
+  add       r14, rcx                               ;
+  add       r15d, ecx                              ;
+  add       dword [current_ptr], ecx               ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .write_all_str:
@@ -281,6 +297,8 @@ ctrl_group:
   test      rbx, MULT_BIT                          ;
   jnz       invalid_expression_err                 ;
   xor       rcx, rcx                               ;
+  xor       edi, edi                               ;
+  mov       edx, dword [r12 + 2]                   ;
   lea       r12, [r12 + 2]                         ;
 .check_strlen:
   mov       ax, word [r12]                         ;
@@ -289,12 +307,14 @@ ctrl_group:
   je        .end_strlen_check                      ;
   inc       r12                                    ;
   inc       rcx                                    ;
+  shl       edi, 8                                 ;
+  not       dil                                    ;
   jmp       .check_strlen                          ;
 .end_strlen_check:
   cmp       ecx, 4                                 ;
-  jne       invalid_expression_err                 ;
+  jg        op_sz_not_match_err                    ;
+  and       edx, edi                               ;
   mov       rdi, qword [sib_offset_ptr]            ;
-  mov       edx, dword [r12 - 4]                   ;
   test      rbx, MINUS_BIT                         ;
   jz        .skip_str_neg                          ;
   neg       edx                                    ;
@@ -520,6 +540,11 @@ ctrl_group:
   jmp       parse_ir                               ;
 .not_entry:
   mov       edi, dword [r13 + 1]                   ;
+  test      rbx, OFFSET_BIT                        ;
+  jz        .not_offset                            ;
+  sub       edi, dword [current_ptr]               ;
+  sub       edi, 4                                 ;
+.not_offset:
   mov       dword [r14], edi                       ;
   lea       r14, [r14 + 4]                         ;
   lea       r15d, [r15d + 4]                       ;
@@ -538,15 +563,23 @@ ctrl_group:
   je        .delayed_addr                          ;
   jmp       .compare_label                         ;
 .delayed_addr:
-  test      rbx, ENTRY_BIT                         ;
-  jnz       undef_lbl_err                          ;
   mov       rdi, qword [deladrbuf_ptr]             ;
   add       rdi, qword [deladr_offset]             ;
   mov       qword [rdi], r12                       ;
   mov       qword [rdi + 8], r14                   ;
   mov       rax, qword [current_line]              ;
   mov       qword [rdi + 16], rax                  ;
-  add       qword [deladr_offset], 24              ;
+  test      rbx, ENTRY_BIT                         ;
+  jz        .skip_entry_bit                        ;
+  mov       byte [rdi + 24], 'E'                   ;
+.skip_entry_bit:
+  test      rbx, OFFSET_BIT                        ;
+  jz        .not_del_offset                        ;
+  mov       esi, dword [current_ptr]               ;
+  add       esi, 4                                 ;
+  sub       dword [r14], esi                       ;
+.not_del_offset:
+  add       qword [deladr_offset], 25              ;
   lea       r14, [r14 + 4]                         ;
   add       qword [current_ptr], 4                 ;
   add       r15d, 4                                ;
@@ -559,9 +592,9 @@ ctrl_group:
   jmp       .del_skip_adr                          ;
 
 .handle_sib_address:
-  test      rbx, MULT_BIT + MINUS_BIT              ;
+  test      rbx, MULT_BIT                          ;
   jnz       invalid_expression_err                 ;
-  test      rbx, PLUS_BIT                          ;
+  test      rbx, PLUS_BIT + MINUS_BIT              ;
   jz        invalid_expression_err                 ;
   mov       rdx, PLUS_BIT                          ;
   not       rdx                                    ;
@@ -583,6 +616,11 @@ ctrl_group:
   jne       .sib_next_label                        ;
   mov       esi, dword [r13 + 1]                   ;
   mov       rdi, qword [sib_offset_ptr]            ;
+  test      rbx, MINUS_BIT                         ;
+  jz        .skip_sib_addr_neg                     ;
+  neg       esi                                    ;
+  xor       rbx, MINUS_BIT                         ;
+.skip_sib_addr_neg:
   add       dword [rdi], esi                       ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
@@ -605,7 +643,12 @@ ctrl_group:
   mov       qword [rdi + 8], rsi                   ;
   mov       rax, qword [current_line]              ;
   mov       qword [rdi + 16], rax                  ;
-  add       qword [deladr_offset], 24              ;
+  test      rbx, MINUS_BIT                         ;
+  jz        .skip_deladdr_neg                      ;
+  mov       byte [rdi + 24], '-'                   ;
+  xor       rbx, MINUS_BIT                         ;
+.skip_deladdr_neg:
+  add       qword [deladr_offset], 25              ;
 .sib_del_skip:
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ;
