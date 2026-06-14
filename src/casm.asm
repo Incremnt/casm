@@ -183,6 +183,14 @@ undef_lbl_err:
   mov       rsi, e_undef_lbl_msg
   jmp       err_exit_line
 
+rel_jmp_range_err:
+  mov       rsi, e_reljmp_range_msg
+  jmp       err_exit_line
+
+invalid_operands_err:
+  mov       rsi, e_invalid_opds_msg
+  jmp       err_exit_line
+
 err_exit:
   xor       rcx, rcx
   push      rsi
@@ -237,6 +245,8 @@ e_invalid_char_msg db ESC, '[31m', "[Error]: Unexpected character in string", ES
 e_invalid_expr_msg db ESC, '[31m', "[Error]: Invalid expression",             ESC, '[0m', LF, NUL
 e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match",      ESC, '[0m', LF, NUL
 e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label",                ESC, '[0m', LF, NUL
+e_reljmp_range_msg db ESC, '[31m', "[Error]: Relative jump out of range",     ESC, '[0m', LF, NUL
+e_invalid_opds_msg db ESC, '[31m', "[Error]: Invalid operands",               ESC, '[0m', LF, NUL
 
 e_line_msg_st      db ESC, '[31m', "[Line]:  "
 E_LINE_MSG_ST_SZ      = $ - e_line_msg_st
@@ -379,6 +389,11 @@ group_jmp_tbl:
   dq invalid_expression_err
   dq invalid_expression_err
   dq dir_group
+  dq pref_group
+  dq invalid_expression_err
+  dq invalid_expression_err
+  dq invalid_expression_err
+  dq invalid_expression_err
 
 ctrl_jmp_tbl:
   dq ctrl_group.handle_eof
@@ -430,6 +445,83 @@ instr_node_tbl:
   dq par_trie.ret_node
   dq par_trie.pusha_node
   dq par_trie.popa_node
+  dq par_trie.adc_node
+  dq par_trie.sbb_node
+  dq par_trie.daa_node
+  dq par_trie.das_node
+  dq par_trie.aaa_node
+  dq par_trie.aas_node
+  dq par_trie.bound_node
+  dq par_trie.arpl_node
+  dq par_trie.imul_node
+  dq par_trie.insb_node
+  dq par_trie.insw_node
+  dq par_trie.insd_node
+  dq par_trie.outsb_node
+  dq par_trie.outsw_node
+  dq par_trie.outsd_node
+  dq par_trie.cbw_node
+  dq par_trie.cwd_node
+  dq par_trie.wait_node
+  dq par_trie.pushf_node
+  dq par_trie.popf_node
+  dq par_trie.sahf_node
+  dq par_trie.lahf_node
+  dq par_trie.movsb_node
+  dq par_trie.movsw_node
+  dq par_trie.movsd_node
+  dq par_trie.cmpsb_node
+  dq par_trie.cmpsw_node
+  dq par_trie.cmpsd_node
+  dq par_trie.stosb_node
+  dq par_trie.stosw_node
+  dq par_trie.stosd_node
+  dq par_trie.lodsb_node
+  dq par_trie.lodsw_node
+  dq par_trie.lodsd_node
+  dq par_trie.scasb_node
+  dq par_trie.scasw_node
+  dq par_trie.scasd_node
+  dq par_trie.rol_node
+  dq par_trie.ror_node
+  dq par_trie.rcl_node
+  dq par_trie.rcr_node
+  dq par_trie.shl_node
+  dq par_trie.shr_node
+  dq par_trie.sal_node
+  dq par_trie.sar_node
+  dq par_trie.les_node
+  dq par_trie.lds_node
+  dq par_trie.enter_node
+  dq par_trie.leave_node
+  dq par_trie.retf_node
+  dq par_trie.int3_node
+  dq par_trie.into_node
+  dq par_trie.iret_node
+  dq par_trie.aam_node
+  dq par_trie.aad_node
+  dq par_trie.salc_node
+  dq par_trie.xlat_node
+  dq par_trie.loopnz_node
+  dq par_trie.loopz_node
+  dq par_trie.loop_node
+  dq par_trie.jcxz_node
+  dq par_trie.in_node
+  dq par_trie.out_node
+  dq par_trie.int1_node
+  dq par_trie.hlt_node
+  dq par_trie.cmc_node
+  dq par_trie.div_node
+  dq par_trie.idiv_node
+  dq par_trie.neg_node
+  dq par_trie.clc_node
+  dq par_trie.stc_node
+  dq par_trie.cli_node
+  dq par_trie.sti_node
+  dq par_trie.cld_node
+  dq par_trie.std_node
+  dq par_trie.cwde_node
+  dq par_trie.cdq_node
 
 einst_node_tbl:
   dq par_trie.je_node
@@ -489,6 +581,45 @@ einst_node_tbl:
   dq par_trie.setle_node
   dq par_trie.setg_node
   dq par_trie.ud2_node
+  dq par_trie.sldt_node
+  dq par_trie.str_node
+  dq par_trie.lldt_node
+  dq par_trie.ltr_node
+  dq par_trie.verr_node
+  dq par_trie.verw_node
+  dq par_trie.lar_node
+  dq par_trie.lsl_node
+  dq par_trie.clts_node
+  dq par_trie.invd_node
+  dq par_trie.wbinvd_node
+  dq par_trie.wrmsr_node
+  dq par_trie.rdtsc_node
+  dq par_trie.rdmsr_node
+  dq par_trie.rdpmc_node
+  dq par_trie.sysenter_node
+  dq par_trie.sysexit_node
+  dq par_trie.cpuid_node
+  dq par_trie.bt_node
+  dq par_trie.shld_node
+  dq par_trie.rsm_node
+  dq par_trie.bts_node
+  dq par_trie.shrd_node
+  dq par_trie.cmpxchg_node
+  dq par_trie.lss_node
+  dq par_trie.btr_node
+  dq par_trie.lfs_node
+  dq par_trie.lgs_node
+  dq par_trie.btc_node
+  dq par_trie.bsf_node
+  dq par_trie.bsr_node
+  dq par_trie.xadd_node
+  dq par_trie.bswap_node
+  dq par_trie.sgdt_node
+  dq par_trie.sidt_node
+  dq par_trie.lgdt_node
+  dq par_trie.lidt_node
+  dq par_trie.smsw_node
+  dq par_trie.lmsw_node
 
 ; lexeme trie
 lex_trie:
@@ -519,6 +650,10 @@ lex_trie:
 
 .e_node:
   LEX_NODE 'e', 0, 0, 1, 0, 0
+    LEX_NODE 's', G_SREG, SR_ES, 1, 4, TERM
+      LEX_NODE ':', G_SPREF, SP_ES, 0, 1, TERM
+      LEX_NODE 'i', G_REG32, R32_ESI, 0, 1, TERM
+      LEX_NODE 'p', G_REG32, R32_ESP, 0, 0, TERM
     LEX_NODE 'a', 0, 0, 1, 2, 0
       LEX_NODE 'x', G_REG32, R32_EAX, 0, 0, TERM
     LEX_NODE 'b', 0, 0, 1, 3, 0
@@ -529,41 +664,63 @@ lex_trie:
     LEX_NODE 'd', 0, 0, 1, 3, 0
       LEX_NODE 'x', G_REG32, R32_EDX, 0, 1, TERM
       LEX_NODE 'i', G_REG32, R32_EDI, 0, 0, TERM
-    LEX_NODE 's', 0, 0, 1, 0, 0
-      LEX_NODE 'i', G_REG32, R32_ESI, 0, 1, TERM
-      LEX_NODE 'p', G_REG32, R32_ESP, 0, 0, TERM
+    LEX_NODE 'n', 0, 0, 1, 0, 0
+      LEX_NODE 't', 0, 0, 1, 0, 0
+        LEX_NODE 'e', 0, 0, 1, 0, 0
+          LEX_NODE 'r', G_INSTR, I_ENTER, 0, 0, TERM
 
 .m_node:
   LEX_NODE 'm', 0, 0, 1, 0, 0
-    LEX_NODE 'o', 0, 0, 1, 6, 0
+    LEX_NODE 'o', 0, 0, 1, 9, 0
       LEX_NODE 'v', G_INSTR, I_MOV, 1, 0, TERM
         LEX_NODE 'z', 0, 0, 1, 2, 0
           LEX_NODE 'x', G_EINST, E_MOVZX, 0, 0, TERM
         LEX_NODE 's', 0, 0, 1, 0, 0
-          LEX_NODE 'x', G_EINST, E_MOVSX, 0, 0, TERM
+          LEX_NODE 'x', G_EINST, E_MOVSX, 0, 1, TERM
+          LEX_NODE 'b', G_INSTR, I_MOVSB, 0, 1, TERM
+          LEX_NODE 'w', G_INSTR, I_MOVSW, 0, 1, TERM
+          LEX_NODE 'd', G_INSTR, I_MOVSD, 0, 0, TERM
     LEX_NODE 'u', 0, 0, 1, 0, 0
       LEX_NODE 'l', G_INSTR, I_MUL, 0, 0, TERM
 
 .p_node:
   LEX_NODE 'p', 0, 0, 1, 0, 0
-    LEX_NODE 'u', 0, 0, 1, 4, 0
+    LEX_NODE 'u', 0, 0, 1, 5, 0
       LEX_NODE 's', 0, 0, 1, 0, 0
         LEX_NODE 'h', G_INSTR, I_PUSH, 1, 0, TERM
-          LEX_NODE 'a', G_INSTR, I_PUSHA, 0, 0, TERM
+          LEX_NODE 'a', G_INSTR, I_PUSHA, 0, 1, TERM
+          LEX_NODE 'f', G_INSTR, I_PUSHF, 0, 0, TERM
     LEX_NODE 'o', 0, 0, 1, 0, 0
       LEX_NODE 'p', G_INSTR, I_POP, 1, 0, TERM
-        LEX_NODE 'a', G_INSTR, I_POPA, 0, 0, TERM
+        LEX_NODE 'a', G_INSTR, I_POPA, 0, 1, TERM
+        LEX_NODE 'f', G_INSTR, I_POPF, 0, 0, TERM
 
 .c_node:
   LEX_NODE 'c', 0, 0, 1, 0, 0
+    LEX_NODE 's', G_SREG, SR_CS, 1, 2, TERM
+      LEX_NODE ':', G_SPREF, SP_CS, 0, 0, TERM
     LEX_NODE 'a', 0, 0, 1, 3, 0
       LEX_NODE 'l', 0, 0, 1, 0, 0
         LEX_NODE 'l', G_INSTR, I_CALL, 0, 0, TERM
     LEX_NODE 'x', G_REG16, R16_CX, 0, 1, TERM
     LEX_NODE 'h', G_REG8, R8_CH, 0, 1, TERM
-    LEX_NODE 'l', G_REG8, R8_CL, 0, 1, TERM
-    LEX_NODE 'm', 0, 0, 1, 0, 0
-      LEX_NODE 'p', G_INSTR, I_CMP, 0, 1, TERM
+    LEX_NODE 'l', G_REG8, R8_CL, 1, 6, TERM
+      LEX_NODE 'c', G_INSTR, I_CLC, 0, 1, TERM
+      LEX_NODE 'd', G_INSTR, I_CLD, 0, 1, TERM
+      LEX_NODE 'i', G_INSTR, I_CLI, 0, 1, TERM
+      LEX_NODE 't', 0, 0, 1, 0, 0
+        LEX_NODE 's', G_EINST, E_CLTS, 0, 0, TERM
+    LEX_NODE 'm', 0, 0, 1, 37, 0
+      LEX_NODE 'c', G_INSTR, I_CMC, 0, 1, TERM
+      LEX_NODE 'p', G_INSTR, I_CMP, 1, 9, TERM
+        LEX_NODE 's', 0, 0, 1, 4, 0
+          LEX_NODE 'b', G_INSTR, I_CMPSB, 0, 1, TERM
+          LEX_NODE 'w', G_INSTR, I_CMPSW, 0, 1, TERM
+          LEX_NODE 'd', G_INSTR, I_CMPSD, 0, 0, TERM
+        LEX_NODE 'x', 0, 0, 1, 0, 0
+          LEX_NODE 'c', 0, 0, 1, 0, 0
+            LEX_NODE 'h', 0, 0, 1, 0, 0
+              LEX_NODE 'g', G_EINST, E_CMPXCHG, 0, 0, TERM
       LEX_NODE 'o', 0, 0, 1, 0, 0
         LEX_NODE 'v', 0, 0, 1, 0, 0
           LEX_NODE 'e', G_EINST, E_CMOVE, 0, 1, TERM
@@ -590,6 +747,26 @@ lex_trie:
             LEX_NODE 's', G_EINST, E_CMOVNS, 0, 1, TERM
             LEX_NODE 'o', G_EINST, E_CMOVNO, 0, 1, TERM
             LEX_NODE 'p', G_EINST, E_CMOVPO, 0, 0, TERM
+    LEX_NODE 'b', 0, 0, 1, 2, 0
+      LEX_NODE 'w', G_INSTR, I_CBW, 0, 0, TERM
+    LEX_NODE 'w', 0, 0, 1, 3, 0
+      LEX_NODE 'd', G_INSTR, I_CWD, 1, 0, TERM
+        LEX_NODE 'e', G_INSTR, I_CWDE, 0, 0, TERM
+    LEX_NODE 'p', 0, 0, 1, 4, 0
+      LEX_NODE 'u', 0, 0, 1, 0, 0
+        LEX_NODE 'i', 0, 0, 1, 0, 0
+          LEX_NODE 'd', G_EINST, E_CPUID, 0, 0, TERM
+    LEX_NODE 'd', 0, 0, 1, 2, 0
+      LEX_NODE 'q', G_INSTR, I_CDQ, 0, 0, TERM
+    LEX_NODE 'r', 0, 0, 1, 0, 0
+      LEX_NODE '0', G_CREG, CR_CR0, 0, 1, TERM
+      LEX_NODE '1', G_CREG, CR_CR1, 0, 1, TERM
+      LEX_NODE '2', G_CREG, CR_CR2, 0, 1, TERM
+      LEX_NODE '3', G_CREG, CR_CR3, 0, 1, TERM
+      LEX_NODE '4', G_CREG, CR_CR4, 0, 1, TERM
+      LEX_NODE '5', G_CREG, CR_CR5, 0, 1, TERM
+      LEX_NODE '6', G_CREG, CR_CR6, 0, 1, TERM
+      LEX_NODE '7', G_CREG, CR_CR7, 0, 0, TERM
 
 .j_node:
   LEX_NODE 'j', 0, 0, 1, 0, 0
@@ -605,7 +782,9 @@ lex_trie:
       LEX_NODE 'e', G_EINST, E_JAE, 0, 0, TERM
     LEX_NODE 'b', G_EINST, E_JB, 1, 2, TERM
       LEX_NODE 'e', G_EINST, E_JBE, 0, 0, TERM
-    LEX_NODE 'c', G_EINST, E_JC, 0, 1, TERM
+    LEX_NODE 'c', G_EINST, E_JC, 1, 3, TERM
+      LEX_NODE 'x', 0, 0, 1, 0, 0
+        LEX_NODE 'z', G_INSTR, I_JCXZ, 0, 0, TERM
     LEX_NODE 's', G_EINST, E_JS, 0, 1, TERM
     LEX_NODE 'o', G_EINST, E_JO, 0, 1, TERM
     LEX_NODE 'p', G_EINST, E_JP, 1, 3, TERM
@@ -628,52 +807,109 @@ lex_trie:
 
 .o_node:
   LEX_NODE 'o', 0, 0, 1, 0, 0
-    LEX_NODE 'r', G_INSTR, I_OR, 0, 0, TERM
+    LEX_NODE 'r', G_INSTR, I_OR, 1, 1, TERM
+    LEX_NODE 'u', 0, 0, 1, 0, 0
+      LEX_NODE 't', G_INSTR, I_OUT, 1, 0, TERM
+        LEX_NODE 's', 0, 0, 1, 0, 0
+          LEX_NODE 'b', G_INSTR, I_OUTSB, 0, 1, TERM
+          LEX_NODE 'w', G_INSTR, I_OUTSW, 0, 1, TERM
+          LEX_NODE 'd', G_INSTR, I_OUTSD, 0, 0, TERM
 
 .a_node:
   LEX_NODE 'a', 0, 0, 1, 0, 0
-    LEX_NODE 'n', 0, 0, 1, 2, 0
-      LEX_NODE 'd', G_INSTR, I_AND, 0, 0, TERM
-    LEX_NODE 'd', 0, 0, 1, 2, 0
-      LEX_NODE 'd', G_INSTR, I_ADD, 0, 0, TERM
     LEX_NODE 'h', G_REG8, R8_AH, 0, 1, TERM
     LEX_NODE 'l', G_REG8, R8_AL, 0, 1, TERM
-    LEX_NODE 'x', G_REG16, R16_AX, 0, 0, TERM
+    LEX_NODE 'x', G_REG16, R16_AX, 0, 1, TERM
+    LEX_NODE 'n', 0, 0, 1, 2, 0
+      LEX_NODE 'd', G_INSTR, I_AND, 0, 0, TERM
+    LEX_NODE 'd', 0, 0, 1, 3, 0
+      LEX_NODE 'd', G_INSTR, I_ADD, 0, 1, TERM
+      LEX_NODE 'c', G_INSTR, I_ADC, 0, 0, TERM
+    LEX_NODE 'a', 0, 0, 1, 5, 0
+      LEX_NODE 'a', G_INSTR, I_AAA, 0, 1, TERM
+      LEX_NODE 's', G_INSTR, I_AAS, 0, 1, TERM
+      LEX_NODE 'm', G_INSTR, I_AAM, 0, 1, TERM
+      LEX_NODE 'd', G_INSTR, I_AAD, 0, 0, TERM
+    LEX_NODE 'r', 0, 0, 1, 0, 0
+      LEX_NODE 'p', 0, 0, 1, 0, 0
+        LEX_NODE 'l', G_INSTR, I_ARPL, 0, 0, TERM
 
 .x_node:
   LEX_NODE 'x', 0, 0, 1, 0, 0
     LEX_NODE 'o', 0, 0, 1, 2, 0
       LEX_NODE 'r', G_INSTR, I_XOR, 0, 0, TERM
-    LEX_NODE 'c', 0, 0, 1, 0, 0
+    LEX_NODE 'c', 0, 0, 1, 3, 0
       LEX_NODE 'h', 0, 0, 1, 0, 0
         LEX_NODE 'g', G_INSTR, I_XCHG, 0, 0, TERM
+    LEX_NODE 'l', 0, 0, 1, 3, 0
+      LEX_NODE 'a', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_INSTR, I_XLAT, 0, 0, TERM
+    LEX_NODE 'a', 0, 0, 1, 0, 0
+      LEX_NODE 'd', 0, 0, 1, 0, 0
+        LEX_NODE 'd', G_EINST, E_XADD, 0, 0, TERM
 
 .n_node:
   LEX_NODE 'n', 0, 0, 1, 0, 0
-    LEX_NODE 'o', 0, 0, 1, 0, 0
+    LEX_NODE 'o', 0, 0, 1, 3, 0
       LEX_NODE 't', G_INSTR, I_NOT, 0, 1, TERM
       LEX_NODE 'p', G_INSTR, I_NOP, 0, 0, TERM
+    LEX_NODE 'e', 0, 0, 1, 0, 0
+      LEX_NODE 'g', G_INSTR, I_NEG, 0, 0, TERM
 
 .i_node:
   LEX_NODE 'i', 0, 0, 1, 0, 0
-    LEX_NODE 'n', 0, 0, 1, 0, 0
-      LEX_NODE 't', G_INSTR, I_INT, 0, 1, TERM
-      LEX_NODE 'c', G_INSTR, I_INC, 0, 0, TERM
+    LEX_NODE 'm', 0, 0, 1, 3, 0
+      LEX_NODE 'u', 0, 0, 1, 0, 0
+        LEX_NODE 'l', G_INSTR, I_IMUL, 0, 0, TERM
+    LEX_NODE 'r', 0, 0, 1, 3, 0
+      LEX_NODE 'e', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_INSTR, I_IRET, 0, 0, TERM
+    LEX_NODE 'd', 0, 0, 1, 3, 0
+      LEX_NODE 'i', 0, 0, 1, 0, 0
+        LEX_NODE 'v', G_INSTR, I_IDIV, 0, 0, TERM
+    LEX_NODE 'n', G_INSTR, I_IN, 1, 0, TERM
+      LEX_NODE 't', G_INSTR, I_INT, 1, 4, TERM
+        LEX_NODE '3', G_INSTR, I_INT3, 0, 1, TERM
+        LEX_NODE 'o', G_INSTR, I_INTO, 0, 1, TERM
+        LEX_NODE '1', G_INSTR, I_INT1, 0, 0, TERM
+      LEX_NODE 'c', G_INSTR, I_INC, 0, 1, TERM
+      LEX_NODE 'v', 0, 0, 1, 2, 0
+        LEX_NODE 'd', G_EINST, E_INVD, 0, 0, TERM
+      LEX_NODE 's', 0, 0, 1, 0, 0
+        LEX_NODE 'b', G_INSTR, I_INSB, 0, 1, TERM
+        LEX_NODE 'w', G_INSTR, I_INSW, 0, 1, TERM
+        LEX_NODE 'd', G_INSTR, I_INSD, 0, 0, TERM
 
 .d_node:
   LEX_NODE 'd', 0, 0, 1, 0, 0
+    LEX_NODE 's', G_SREG, SR_DS, 1, 2, TERM
+      LEX_NODE ':', G_SPREF, SP_DS, 0, 0, TERM
     LEX_NODE 'l', G_REG8, R8_DL, 0, 1, TERM
     LEX_NODE 'h', G_REG8, R8_DH, 0, 1, TERM
     LEX_NODE 'x', G_REG16, R16_DX, 0, 1, TERM
-    LEX_NODE 'i', G_REG16, R16_DI, 0, 1, TERM
+    LEX_NODE 'i', G_REG16, R16_DI, 1, 2, TERM
+      LEX_NODE 'v', G_INSTR, I_DIV, 0, 0, TERM
     LEX_NODE 'b', G_DIR, D_DB, 0, 1, TERM
     LEX_NODE 'd', G_DIR, D_DD, 0, 1, TERM
     LEX_NODE 'w', G_DIR, D_DW, 1, 4, TERM
       LEX_NODE 'o', 0, 0, 1, 0, 0
         LEX_NODE 'r', 0, 0, 1, 0, 0
           LEX_NODE 'd', G_CTRL, C_DWORD, 0, 0, TERM
-    LEX_NODE 'e', 0, 0, 1, 0, 0
+    LEX_NODE 'e', 0, 0, 1, 2, 0
       LEX_NODE 'c', G_INSTR, I_DEC, 0, 0, TERM
+    LEX_NODE 'a', 0, 0, 1, 3, 0
+      LEX_NODE 'a', G_INSTR, I_DAA, 0, 1, TERM
+      LEX_NODE 's', G_INSTR, I_DAS, 0, 0, TERM
+    LEX_NODE 'r', 0, 0, 1, 0, 0
+      LEX_NODE '0', G_DREG, DR_DR0, 0, 1, TERM
+      LEX_NODE '1', G_DREG, DR_DR1, 0, 1, TERM
+      LEX_NODE '2', G_DREG, DR_DR2, 0, 1, TERM
+      LEX_NODE '3', G_DREG, DR_DR3, 0, 1, TERM
+      LEX_NODE '4', G_DREG, DR_DR4, 0, 1, TERM
+      LEX_NODE '5', G_DREG, DR_DR5, 0, 1, TERM
+      LEX_NODE '6', G_DREG, DR_DR6, 0, 1, TERM
+      LEX_NODE '7', G_DREG, DR_DR7, 0, 0, TERM
+
 
 .b_node:
   LEX_NODE 'b', 0, 0, 1, 0, 0
@@ -683,20 +919,83 @@ lex_trie:
     LEX_NODE 'x', G_REG16, R16_BX, 0, 1, TERM
     LEX_NODE 'h', G_REG8, R8_BH, 0, 1, TERM
     LEX_NODE 'l', G_REG8, R8_BL, 0, 1, TERM
-    LEX_NODE 'p', G_REG16, R16_BP, 0, 0, TERM
+    LEX_NODE 'p', G_REG16, R16_BP, 0, 1, TERM
+    LEX_NODE 't', G_EINST, E_BT, 1, 4, TERM
+      LEX_NODE 's', G_EINST, E_BTS, 0, 1, TERM
+      LEX_NODE 'r', G_EINST, E_BTR, 0, 1, TERM
+      LEX_NODE 'c', G_EINST, E_BTC, 0, 0, TERM
+    LEX_NODE 's', 0, 0, 1, 6, 0
+      LEX_NODE 'f', G_EINST, E_BSF, 0, 1, TERM
+      LEX_NODE 'r', G_EINST, E_BSR, 0, 1, TERM
+      LEX_NODE 'w', 0, 0, 1, 0, 0
+        LEX_NODE 'a', 0, 0, 1, 0, 0
+          LEX_NODE 'p', G_EINST, E_BSWAP, 0, 0, TERM
+    LEX_NODE 'o', 0, 0, 1, 0, 0
+      LEX_NODE 'u', 0, 0, 1, 0, 0
+        LEX_NODE 'n', 0, 0, 1, 0, 0
+          LEX_NODE 'd', G_INSTR, I_BOUND, 0, 0, TERM
 
 .w_node:
   LEX_NODE 'w', 0, 0, 1, 0, 0
-    LEX_NODE 'o', 0, 0, 1, 0, 0
+    LEX_NODE 'o', 0, 0, 1, 3, 0
       LEX_NODE 'r', 0, 0, 1, 0, 0
         LEX_NODE 'd', G_CTRL, C_WORD, 0, 0, TERM
+    LEX_NODE 'a', 0, 0, 1, 3, 0
+      LEX_NODE 'i', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_INSTR, I_WAIT, 0, 0, TERM
+    LEX_NODE 'r', 0, 0, 1, 4, 0
+      LEX_NODE 'm', 0, 0, 1, 0, 0
+        LEX_NODE 's', 0, 0, 1, 0, 0
+          LEX_NODE 'r', G_EINST, E_WRMSR, 0, 0, TERM
+    LEX_NODE 'b', 0, 0, 1, 0, 0
+      LEX_NODE 'i', 0, 0, 1, 0, 0
+        LEX_NODE 'n', 0, 0, 1, 0, 0
+          LEX_NODE 'v', 0, 0, 1, 0, 0
+            LEX_NODE 'd', G_EINST, E_WBINVD, 0, 0, TERM
 
 .s_node:
   LEX_NODE 's', 0, 0, 1, 0, 0
+    LEX_NODE 's', G_SREG, SR_SS, 1, 2, TERM
+      LEX_NODE ':', G_SPREF, SP_SS, 0, 0, TERM
     LEX_NODE 'u', 0, 0, 1, 2, 0
       LEX_NODE 'b', G_INSTR, I_SUB, 0, 0, TERM
     LEX_NODE 'p', G_REG16, R16_SP, 0, 1, TERM
-    LEX_NODE 'e', 0, 0, 1, 0, 0
+    LEX_NODE 'i', G_REG16, R16_SI, 1, 3, TERM
+      LEX_NODE 'd', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_EINST, E_SIDT, 0, 0, TERM
+    LEX_NODE 'h', 0, 0, 1, 5, 0
+      LEX_NODE 'l', G_INSTR, I_SHL, 1, 2, TERM
+        LEX_NODE 'd', G_EINST, E_SHLD, 0, 0, TERM
+      LEX_NODE 'r', G_INSTR, I_SHR, 1, 0, TERM
+        LEX_NODE 'd', G_EINST, E_SHRD, 0, 0, TERM
+    LEX_NODE 'b', 0, 0, 1, 2, 0
+      LEX_NODE 'b', G_INSTR, I_SBB, 0, 0, TERM
+    LEX_NODE 'a', 0, 0, 1, 6, 0
+      LEX_NODE 'l', G_INSTR, I_SAL, 1, 2, TERM
+        LEX_NODE 'c', G_INSTR, I_SALC, 0, 0, TERM
+      LEX_NODE 'r', G_INSTR, I_SAR, 0, 1, TERM
+      LEX_NODE 'h', 0, 0, 1, 0, 0
+        LEX_NODE 'f', G_INSTR, I_SAHF, 0, 0, TERM
+    LEX_NODE 't', 0, 0, 1, 10, 0
+      LEX_NODE 'c', G_INSTR, I_STC, 0, 1, TERM
+      LEX_NODE 'i', G_INSTR, I_STI, 0, 1, TERM
+      LEX_NODE 'd', G_INSTR, I_STD, 0, 1, TERM
+      LEX_NODE 'r', G_EINST, E_STR, 0, 1, TERM
+      LEX_NODE 'o', 0, 0, 1, 0, 0
+        LEX_NODE 's', 0, 0, 1, 0, 0
+          LEX_NODE 'b', G_INSTR, I_STOSB, 0, 1, TERM
+          LEX_NODE 'w', G_INSTR, I_STOSW, 0, 1, TERM
+          LEX_NODE 'd', G_INSTR, I_STOSD, 0, 0, TERM
+    LEX_NODE 'c', 0, 0, 1, 6, 0
+      LEX_NODE 'a', 0, 0, 1, 0, 0
+        LEX_NODE 's', 0, 0, 1, 0, 0
+          LEX_NODE 'b', G_INSTR, I_SCASB, 0, 1, TERM
+          LEX_NODE 'w', G_INSTR, I_SCASW, 0, 1, TERM
+          LEX_NODE 'd', G_INSTR, I_SCASD, 0, 0, TERM
+    LEX_NODE 'l', 0, 0, 1, 3, 0
+      LEX_NODE 'd', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_EINST, E_SLDT, 0, 0, TERM
+    LEX_NODE 'e', 0, 0, 1, 26, 0
       LEX_NODE 't', 0, 0, 1, 0, 0
         LEX_NODE 'e', G_EINST, E_SETE, 0, 1, TERM
         LEX_NODE 'z', G_EINST, E_SETE, 0, 1, TERM
@@ -722,46 +1021,162 @@ lex_trie:
           LEX_NODE 's', G_EINST, E_SETNS, 0, 1, TERM
           LEX_NODE 'o', G_EINST, E_SETNO, 0, 1, TERM
           LEX_NODE 'p', G_EINST, E_SETPO, 0, 0, TERM
+    LEX_NODE 'y', 0, 0, 1, 10, 0
+      LEX_NODE 's', 0, 0, 1, 0, 0
+        LEX_NODE 'e', 0, 0, 1, 0, 0
+          LEX_NODE 'n', 0, 0, 1, 4, 0
+            LEX_NODE 't', 0, 0, 1, 0, 0
+              LEX_NODE 'e', 0, 0, 1, 0, 0
+                LEX_NODE 'r', G_EINST, E_SYSENTER, 0, 0, TERM
+          LEX_NODE 'x', 0, 0, 1, 0, 0
+            LEX_NODE 'i', 0, 0, 1, 0, 0
+              LEX_NODE 't', G_EINST, E_SYSEXIT, 0, 0, TERM
+    LEX_NODE 'g', 0, 0, 1, 3, 0
+      LEX_NODE 'd', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_EINST, E_SGDT, 0, 0, TERM
+    LEX_NODE 'm', 0, 0, 1, 0, 0
+      LEX_NODE 's', 0, 0, 1, 0, 0
+        LEX_NODE 'w', G_EINST, E_SMSW, 0, 0, TERM
 
 .l_node:
   LEX_NODE 'l', 0, 0, 1, 0, 0
-    LEX_NODE 'e', 0, 0, 1, 0, 0
-      LEX_NODE 'a', G_INSTR, I_LEA, 0, 0, TERM
+    LEX_NODE 'e', 0, 0, 1, 5, 0
+      LEX_NODE 'a', G_INSTR, I_LEA, 1, 3, TERM
+        LEX_NODE 'v', 0, 0, 1, 0, 0
+          LEX_NODE 'e', G_INSTR, I_LEAVE, 0, 0, TERM
+      LEX_NODE 's', G_INSTR, I_LES, 0, 0, TERM
+    LEX_NODE 'a', 0, 0, 1, 4, 0
+      LEX_NODE 'r', G_EINST, E_LAR, 0, 1, TERM
+      LEX_NODE 'h', 0, 0, 1, 0, 0
+        LEX_NODE 'f', G_INSTR, I_LAHF, 0, 0, TERM
+    LEX_NODE 'o', 0, 0, 1, 13, 0
+      LEX_NODE 'c', 0, 0, 1, 2, 0
+        LEX_NODE 'k', G_PREF, P_LOCK, 0, 0, TERM
+      LEX_NODE 'd', 0, 0, 1, 5, 0
+        LEX_NODE 's', 0, 0, 1, 0, 0
+          LEX_NODE 'b', G_INSTR, I_LODSB, 0, 1, TERM
+          LEX_NODE 'w', G_INSTR, I_LODSW, 0, 1, TERM
+          LEX_NODE 'd', G_INSTR, I_LODSD, 0, 0, TERM
+      LEX_NODE 'o', 0, 0, 1, 0, 0
+        LEX_NODE 'p', G_INSTR, I_LOOP, 1, 0, TERM
+          LEX_NODE 'z', G_INSTR, I_LOOPZ, 0, 1, TERM
+          LEX_NODE 'n', 0, 0, 1, 0, 0
+            LEX_NODE 'z', G_INSTR, I_LOOPNZ, 0, 0, TERM
+    LEX_NODE 'd', 0, 0, 1, 2, 0
+      LEX_NODE 's', G_INSTR, I_LDS, 0, 0, TERM
+    LEX_NODE 'l', 0, 0, 1, 3, 0
+      LEX_NODE 'd', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_EINST, E_LLDT, 0, 0, TERM
+    LEX_NODE 't', 0, 0, 1, 2, 0
+      LEX_NODE 'r', G_EINST, E_LTR, 0, 0, TERM
+    LEX_NODE 'f', 0, 0, 1, 2, 0
+      LEX_NODE 's', G_EINST, E_LFS, 0, 0, TERM
+    LEX_NODE 'g', 0, 0, 1, 4, 0
+      LEX_NODE 's', G_EINST, E_LGS, 0, 1, TERM
+      LEX_NODE 'd', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_EINST, E_LGDT, 0, 0, TERM
+    LEX_NODE 's', 0, 0, 1, 3, 0
+      LEX_NODE 'l', G_EINST, E_LSL, 0, 1, TERM
+      LEX_NODE 's', G_EINST, E_LSS, 0, 0, TERM
+    LEX_NODE 'i', 0, 0, 1, 3, 0
+      LEX_NODE 'd', 0, 0, 1, 0, 0
+        LEX_NODE 't', G_EINST, E_LIDT, 0, 0, TERM
+    LEX_NODE 'm', 0, 0, 1, 0, 0
+      LEX_NODE 's', 0, 0, 1, 0, 0
+        LEX_NODE 'w', G_EINST, E_LMSW, 0, 0, TERM
 
 .r_node:
   LEX_NODE 'r', 0, 0, 1, 0, 0
-    LEX_NODE 'e', 0, 0, 1, 0, 0
-      LEX_NODE 't', G_INSTR, I_RET, 0, 0, TERM
+    LEX_NODE 'e', 0, 0, 1, 7, 0
+      LEX_NODE 't', G_INSTR, I_RET, 1, 2, TERM
+        LEX_NODE 'f', G_INSTR, I_RETF, 0, 0, TERM
+      LEX_NODE 'p', G_PREF, P_REPE, 1, 0, TERM
+        LEX_NODE 'e', G_PREF, P_REPE, 0, 1, TERM
+        LEX_NODE 'n', 0, 0, 1, 0, 0
+          LEX_NODE 'e', G_PREF, P_REPNE, 0, 0, TERM
+    LEX_NODE 'o', 0, 0, 1, 3, 0
+      LEX_NODE 'l', G_INSTR, I_ROL, 0, 1, TERM
+      LEX_NODE 'r', G_INSTR, I_ROR, 0, 0, TERM
+    LEX_NODE 's', 0, 0, 1, 2, 0
+      LEX_NODE 'm', G_EINST, E_RSM, 0, 0, TERM
+    LEX_NODE 'c', 0, 0, 1, 3, 0
+      LEX_NODE 'l', G_INSTR, I_RCL, 0, 1, TERM
+      LEX_NODE 'r', G_INSTR, I_RCR, 0, 0, TERM
+    LEX_NODE 'd', 0, 0, 1, 0, 0
+      LEX_NODE 't', 0, 0, 1, 3, 0
+        LEX_NODE 's', 0, 0, 1, 0, 0
+          LEX_NODE 'c', G_EINST, E_RDTSC, 0, 0, TERM
+      LEX_NODE 'm', 0, 0, 1, 3, 0
+        LEX_NODE 's', 0, 0, 1, 0, 0
+          LEX_NODE 'r', G_EINST, E_RDMSR, 0, 0, TERM
+      LEX_NODE 'p', 0, 0, 1, 0, 0
+        LEX_NODE 'm', 0, 0, 1, 0, 0
+          LEX_NODE 'c', G_EINST, E_RDPMC, 0, 0, TERM
 
 .u_node:
   LEX_NODE 'u', 0, 0, 1, 0, 0
     LEX_NODE 'd', 0, 0, 1, 0, 0
       LEX_NODE '2', G_EINST, E_UD2, 0, 0, TERM
 
+.h_node:
+  LEX_NODE 'h', 0, 0, 1, 0, 0
+    LEX_NODE 'l', 0, 0, 1, 0, 0
+      LEX_NODE 't', G_INSTR, I_HLT, 0, 0, TERM
+
+.v_node:
+  LEX_NODE 'v', 0, 0, 1, 0, 0
+    LEX_NODE 'e', 0, 0, 1, 0, 0
+      LEX_NODE 'r', 0, 0, 1, 0, 0
+        LEX_NODE 'r', G_EINST, E_VERR, 0, 1, TERM
+        LEX_NODE 'w', G_EINST, E_VERW, 0, 0, TERM
+
+.f_node:
+  LEX_NODE 'f', 0, 0, 1, 0, 0
+    LEX_NODE 's', G_SREG, SR_FS, 1, 2, TERM
+      LEX_NODE ':', G_SPREF, SP_FS, 0, 0, TERM
+
+.g_node:
+  LEX_NODE 'g', 0, 0, 1, 0, 0
+    LEX_NODE 's', G_SREG, SR_GS, 1, 2, TERM
+      LEX_NODE ':', G_SPREF, SP_GS, 0, 0, TERM
+
 ; token trie
 par_trie:
 .mov_node:
-  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+  PAR_NODE G_REG32, 0x00, 1, 7, 0, 0
     PAR_NODE G_CTRL, 0x8B, 0, 1, MEM32_BIT, MODRM + SIB + TERM
     PAR_NODE G_REG32, 0x89, 0, 1, 0, MODRM + TERM
-    PAR_NODE G_CTRL, 0xB8, 0, 0, IMM32_BIT, SHORT_OP + TERM
-  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE G_CTRL, 0xB8, 0, 1, IMM32_BIT, SHORT_OP + TERM
+    PAR_NODE G_SREG, 0x8C, 0, 1, 0, MODRM + TERM
+    PAR_NODE G_CREG, 0x20, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_DREG, 0x21, 0, 0, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 4, MEM32_BIT, 0
     PAR_NODE G_REG32, 0x89, 0, 1, MEM32_BIT, MODRM + SIB + TERM
-    PAR_NODE G_CTRL, 0xC7, 0, 0, MEM32_BIT + IMM32_BIT, MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xC7, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + TERM
+    PAR_NODE G_SREG, 0x8C, 0, 0, MEM32_BIT, MODRM + SIB + TERM
   PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
     PAR_NODE G_REG8, 0x88, 0, 1, MEM8_BIT, MODRM + SIB + TERM
     PAR_NODE G_CTRL, 0xC6, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + TERM
-  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+  PAR_NODE G_CTRL, 0x00, 1, 4, MEM16_BIT, 0
     PAR_NODE G_REG16, 0x89, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
-    PAR_NODE G_CTRL, 0xC7, 0, 0, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + TERM
-  PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
+    PAR_NODE G_CTRL, 0xC7, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + TERM
+    PAR_NODE G_SREG, 0x8C, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 5, 0, 0
     PAR_NODE G_CTRL, 0x8B, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
     PAR_NODE G_REG16, 0x89, 0, 1, 0, OPSIZE + MODRM + TERM
-    PAR_NODE G_CTRL, 0xB8, 0, 0, IMM16_BIT, OPSIZE + SHORT_OP + TERM
-  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0xB8, 0, 1, IMM16_BIT, OPSIZE + SHORT_OP + TERM
+    PAR_NODE G_SREG, 0x8C, 0, 0, 0, OPSIZE + MODRM + TERM
+  PAR_NODE G_REG8, 0x00, 1, 4, 0, 0
     PAR_NODE G_REG8, 0x88, 0, 1, 0, MODRM + TERM
     PAR_NODE G_CTRL, 0x8A, 0, 1, MEM8_BIT, MODRM + SIB + TERM
     PAR_NODE G_CTRL, 0xB0, 0, 0, IMM8_BIT, SHORT_OP + TERM
+  PAR_NODE G_SREG, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG16, 0x8E, 0, 1, 0, MODRM + TERM
+    PAR_NODE G_CTRL, 0x8E, 0, 0, MEM16_BIT, MODRM + SIB + TERM
+  PAR_NODE G_CREG, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG32, 0x22, 0, 0, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_DREG, 0x00, 1, 0, 0, 0
+    PAR_NODE G_REG32, 0x23, 0, 0, 0, TWOBYTE + MODRM + TERM
 
 .mul_node:
   PAR_NODE G_REG32, 0xf7, 0, 1, 0, MODRM + OPNUM5 + TERM
@@ -774,13 +1189,27 @@ par_trie:
 .push_node:
   PAR_NODE G_REG32, 0x50, 0, 1, 0, SHORT_OP + TERM
   PAR_NODE G_CTRL, 0x68, 0, 1, IMM32_BIT, TERM
-  PAR_NODE G_CTRL, 0xFF, 0, 0, MEM32_BIT, MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0xFF, 0, 1, MEM32_BIT, MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE SR_ES, 0x06, 0, 1, 0, REG + TERM
+  PAR_NODE SR_CS, 0x0E, 0, 1, 0, REG + TERM
+  PAR_NODE SR_SS, 0x16, 0, 1, 0, REG + TERM
+  PAR_NODE SR_DS, 0x1E, 0, 1, 0, REG + TERM
+  PAR_NODE SR_FS, 0xA0, 0, 1, 0, TWOBYTE + REG + TERM
+  PAR_NODE SR_GS, 0xA8, 0, 0, 0, TWOBYTE + REG + TERM
 
 .pop_node:
-  PAR_NODE G_REG32, 0x58, 0, 0, 0, SHORT_OP + TERM
+  PAR_NODE G_REG32, 0x58, 0, 1, 0, SHORT_OP + TERM
+  PAR_NODE G_CTRL, 0x8F, 0, 1, MEM32_BIT, MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x58, 0, 1, 0, OPSIZE + SHORT_OP + TERM
+  PAR_NODE G_CTRL, 0x8F, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+  PAR_NODE SR_ES, 0x07, 0, 1, 0, REG + TERM
+  PAR_NODE SR_SS, 0x17, 0, 1, 0, REG + TERM
+  PAR_NODE SR_DS, 0x1F, 0, 1, 0, REG + TERM
+  PAR_NODE SR_FS, 0xA1, 0, 1, 0, TWOBYTE + REG + TERM
+  PAR_NODE SR_GS, 0xA9, 0, 0, 0, TWOBYTE + REG + TERM
 
 .call_node:
-  PAR_NODE G_CTRL, 0xE8, 0, 1, IMM32_BIT + OFFSET_BIT, TERM
+  PAR_NODE G_CTRL, 0xE8, 0, 1, IMM32_BIT + REL32_BIT, TERM
   PAR_NODE G_CTRL, 0xFF, 0, 1, MEM32_BIT, MODRM + SIB + OPNUM3 + TERM
   PAR_NODE G_REG32, 0xFF, 0, 0, 0, MODRM + OPNUM3 + TERM
 
@@ -808,7 +1237,7 @@ par_trie:
     PAR_NODE G_CTRL, 0x81, 0, 0, IMM16_BIT, OPSIZE + MODRM + OPNUM8 + TERM
 
 .jmp_node:
-  PAR_NODE G_CTRL, 0xE9, 0, 1, IMM32_BIT + OFFSET_BIT, TERM
+  PAR_NODE G_CTRL, 0xE9, 0, 1, IMM32_BIT + REL32_BIT, TERM
   PAR_NODE G_CTRL, 0xFF, 0, 1, MEM32_BIT, SIB + MODRM + OPNUM5 + TERM
   PAR_NODE G_REG32, 0xFF, 0, 0, 0, MODRM + OPNUM5 + TERM
 
@@ -876,7 +1305,7 @@ par_trie:
   PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
     PAR_NODE G_CTRL, 0x81, 0, 1, IMM16_BIT, OPSIZE + MODRM + OPNUM5 + TERM
     PAR_NODE G_CTRL, 0x83, 0, 1, IMM8_BIT, OPSIZE + MODRM + OPNUM5 + TERM
-    PAR_NODE G_CTRL, 0x23, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0x23, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
     PAR_NODE G_REG16, 0x21, 0, 0, 0, OPSIZE + MODRM + TERM
 
 .add_node:
@@ -999,6 +1428,7 @@ par_trie:
   PAR_NODE G_CTRL, 0x90, 0, 0, NOP_BIT, TERM
 
 .ret_node:
+  PAR_NODE G_CTRL, 0xC2, 0, 1, IMM16_BIT, TERM
   PAR_NODE G_CTRL, 0xC3, 0, 0, NOP_BIT, TERM
 
 .pusha_node:
@@ -1007,72 +1437,540 @@ par_trie:
 .popa_node:
   PAR_NODE G_CTRL, 0x61, 0, 0, NOP_BIT, TERM
 
+.adc_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + OPNUM3 + TERM
+    PAR_NODE G_REG32, 0x11, 0, 0, MEM32_BIT, MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE G_CTRL, 0x80, 0, 1, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM3 + TERM
+    PAR_NODE G_REG8, 0x10, 0, 0, MEM8_BIT, MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + OPNUM3 + TERM
+    PAR_NODE G_REG16, 0x11, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+  PAR_NODE G_REG32, 0x00, 1, 5, 0, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, IMM32_BIT, MODRM + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0x83, 0, 1, IMM8_BIT, MODRM + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0x13, 0, 1, MEM32_BIT, MODRM + SIB + TERM
+    PAR_NODE G_REG32, 0x11, 0, 0, 0, MODRM + TERM
+  PAR_NODE G_REG8, 0x00, 1, 4, 0, 0
+    PAR_NODE G_CTRL, 0x80, 0, 1, IMM8_BIT, MODRM + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0x10, 0, 0, MEM8_BIT, MODRM + SIB + TERM
+    PAR_NODE G_REG8, 0x10, 0, 0, 0, MODRM + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, IMM16_BIT, OPSIZE + MODRM + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0x83, 0, 1, IMM8_BIT, OPSIZE + MODRM + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0x13, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+    PAR_NODE G_REG16, 0x11, 0, 0, 0, OPSIZE + MODRM + TERM
+
+.sbb_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, MEM32_BIT + IMM32_BIT, MODRM + SIB + OPNUM4 + TERM
+    PAR_NODE G_REG32, 0x19, 0, 0, MEM32_BIT, MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE G_CTRL, 0x80, 0, 1, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM4 + TERM
+    PAR_NODE G_REG8, 0x18, 0, 0, MEM8_BIT, MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + OPNUM4 + TERM
+    PAR_NODE G_REG16, 0x19, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+  PAR_NODE G_REG32, 0x00, 1, 5, 0, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, IMM32_BIT, MODRM + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0x83, 0, 1, IMM8_BIT, MODRM + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0x1B, 0, 1, MEM32_BIT, MODRM + SIB + TERM
+    PAR_NODE G_REG32, 0x19, 0, 0, 0, MODRM + TERM
+  PAR_NODE G_REG8, 0x00, 1, 4, 0, 0
+    PAR_NODE G_CTRL, 0x80, 0, 1, IMM8_BIT, MODRM + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0x18, 0, 0, MEM8_BIT, MODRM + SIB + TERM
+    PAR_NODE G_REG8, 0x18, 0, 0, 0, MODRM + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0x81, 0, 1, IMM16_BIT, OPSIZE + MODRM + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0x83, 0, 1, IMM8_BIT, OPSIZE + MODRM + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0x1B, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+    PAR_NODE G_REG16, 0x19, 0, 0, 0, OPSIZE + MODRM + TERM
+
+.daa_node:
+  PAR_NODE G_CTRL, 0x27, 0, 0, NOP_BIT, TERM
+
+.das_node:
+  PAR_NODE G_CTRL, 0x2F, 0, 0, NOP_BIT, TERM
+
+.aaa_node:
+  PAR_NODE G_CTRL, 0x37, 0, 0, NOP_BIT, TERM
+
+.aas_node:
+  PAR_NODE G_CTRL, 0x3F, 0, 0, NOP_BIT, TERM
+
+.bound_node:
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_CTRL, 0x62, 0, 0, MEM32_BIT, MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0x62, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+
+.arpl_node:
+  PAR_NODE G_REG16, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG16, 0x63, 0, 0, 0, MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0x63, 0, 0, 0, MODRM + SIB + TERM
+
+.imul_node:
+  PAR_NODE G_REG32, 0xf7, 1, 5, 0, MODRM + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0xAF, 1, 2, MEM32_BIT, MODRM + SIB + TERM
+      PAR_NODE G_CTRL, 0x69, 0, 0, MEM32_BIT + IMM32_BIT, MODRM + SIB + TERM
+    PAR_NODE G_REG32, 0xAF, 1, 0, REGFIRST_BIT, MODRM + TERM
+      PAR_NODE G_CTRL, 0x69, 0, 0, IMM32_BIT, MODRM + TERM
+  PAR_NODE G_REG16, 0xf7, 1, 5, 0, MODRM + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0x00, 1, 2, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+      PAR_NODE G_CTRL, 0x69, 0, 0, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + TERM
+    PAR_NODE G_REG16, 0xAF, 1, 0, REGFIRST_BIT, OPSIZE + MODRM + TERM
+      PAR_NODE G_CTRL, 0x69, 0, 0, IMM16_BIT, OPSIZE + MODRM + TERM
+  PAR_NODE G_REG8, 0xf6, 0, 1, 0, OPSIZE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 1, MEM32_BIT, MODRM + SIB + OPNUM6 + TERM
+  PAR_NODE G_CTRL, 0xf6, 0, 1, MEM8_BIT, MODRM + SIB + OPNUM6 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + OPNUM6 + TERM
+
+.insb_node:
+  PAR_NODE G_CTRL, 0x6C, 0, 0, NOP_BIT, TERM
+
+.insw_node:
+  PAR_NODE G_CTRL, 0x6D, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.insd_node:
+  PAR_NODE G_CTRL, 0x6D, 0, 0, NOP_BIT, TERM
+
+.outsb_node:
+  PAR_NODE G_CTRL, 0x6E, 0, 0, NOP_BIT, TERM
+
+.outsw_node:
+  PAR_NODE G_CTRL, 0x6F, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.outsd_node:
+  PAR_NODE G_CTRL, 0x6F, 0, 0, NOP_BIT, TERM
+
+.cbw_node:
+  PAR_NODE G_CTRL, 0x98, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.cwd_node:
+  PAR_NODE G_CTRL, 0x99, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.wait_node:
+  PAR_NODE G_CTRL, 0x9B, 0, 0, NOP_BIT, TERM
+
+.pushf_node:
+  PAR_NODE G_CTRL, 0x9C, 0, 0, NOP_BIT, TERM
+
+.popf_node:
+  PAR_NODE G_CTRL, 0x9D, 0, 0, NOP_BIT, TERM
+
+.sahf_node:
+  PAR_NODE G_CTRL, 0x9E, 0, 0, NOP_BIT, TERM
+
+.lahf_node:
+  PAR_NODE G_CTRL, 0x9F, 0, 0, NOP_BIT, TERM
+
+.movsb_node:
+  PAR_NODE G_CTRL, 0xA4, 0, 0, NOP_BIT, TERM
+
+.movsw_node:
+  PAR_NODE G_CTRL, 0xA5, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.movsd_node:
+  PAR_NODE G_CTRL, 0xA5, 0, 0, NOP_BIT, TERM
+
+.cmpsb_node:
+  PAR_NODE G_CTRL, 0xA6, 0, 0, NOP_BIT, TERM
+
+.cmpsw_node:
+  PAR_NODE G_CTRL, 0xA7, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.cmpsd_node:
+  PAR_NODE G_CTRL, 0xA7, 0, 0, NOP_BIT, TERM
+
+.stosb_node:
+  PAR_NODE G_CTRL, 0xAA, 0, 0, NOP_BIT, TERM
+
+.stosw_node:
+  PAR_NODE G_CTRL, 0xAB, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.stosd_node:
+  PAR_NODE G_CTRL, 0xAB, 0, 0, NOP_BIT, TERM
+
+.lodsb_node:
+  PAR_NODE G_CTRL, 0xAC, 0, 0, NOP_BIT, TERM
+
+.lodsw_node:
+  PAR_NODE G_CTRL, 0xAD, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.lodsd_node:
+  PAR_NODE G_CTRL, 0xAD, 0, 0, NOP_BIT, TERM
+
+.scasb_node:
+  PAR_NODE G_CTRL, 0xAE, 0, 0, NOP_BIT, TERM
+
+.scasw_node:
+  PAR_NODE G_CTRL, 0xAF, 0, 0, NOP_BIT, OPSIZE + TERM
+
+.scasd_node:
+  PAR_NODE G_CTRL, 0xAF, 0, 0, NOP_BIT, TERM
+
+.rol_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM1 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM1 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM1 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM1 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM1 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM1 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM1 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM1 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM1 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM1 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM1 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM1 + TERM
+
+.ror_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM2 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM2 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM2 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM2 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM2 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM2 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM2 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM2 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM2 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM2 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM2 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM2 + TERM
+
+.rcl_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM3 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM3 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM3 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM3 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM3 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM3 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM3 + TERM
+
+.rcr_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM4 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM4 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM4 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM4 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM4 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM4 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM4 + TERM
+
+.shl_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM5 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM5 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM5 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM5 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM5 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM5 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM5 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM5 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM5 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM5 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM5 + TERM
+
+.shr_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM6 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM6 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM6 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM6 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM6 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM6 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM6 + TERM
+
+.sal_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM7 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM7 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM7 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM7 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM7 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM7 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM7 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM7 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM7 + TERM
+
+.sar_node:
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM32_BIT, MODRM + SIB + REG + OPNUM8 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM32_BIT + IMM8_BIT, MODRM + SIB + OPNUM8 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM16_BIT, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, MEM16_BIT, MODRM + SIB + REG + OPNUM8 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, MEM16_BIT + IMM8_BIT, OPSIZE + MODRM + SIB + OPNUM8 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM8_BIT, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, MEM8_BIT, MODRM + SIB + REG + OPNUM8 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, MEM8_BIT + IMM8_BIT, MODRM + SIB + OPNUM8 + TERM
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, MODRM + REG + OPNUM8 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, MODRM + OPNUM8 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE R8_CL, 0xD3, 0, 1, 0, OPSIZE + MODRM + REG + OPNUM8 + TERM
+    PAR_NODE G_CTRL, 0xC1, 0, 0, IMM8_BIT, OPSIZE + MODRM + OPNUM8 + TERM
+  PAR_NODE G_REG8, 0x00, 1, 0, 0, 0
+    PAR_NODE R8_CL, 0xD2, 0, 1, 0, MODRM + REG + OPNUM8 + TERM
+    PAR_NODE G_CTRL, 0xC0, 0, 0, IMM8_BIT, MODRM + OPNUM8 + TERM
+
+.les_node:
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_CTRL, 0xC4, 0, 0, MEM32_BIT, MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0xC4, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+
+.lds_node:
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_CTRL, 0xC5, 0, 0, MEM32_BIT, MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0xC5, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
+
+.enter_node:
+  PAR_NODE G_CTRL, 0x00, 1, 0, IMM16_BIT, 0
+    PAR_NODE G_CTRL, 0xC8, 0, 0, IMM8_BIT + IMM16_BIT, TERM
+
+.leave_node:
+  PAR_NODE G_CTRL, 0xC9, 0, 0, NOP_BIT, TERM
+
+.retf_node:
+  PAR_NODE G_CTRL, 0xCA, 0, 1, IMM16_BIT, TERM
+  PAR_NODE G_CTRL, 0xCB, 0, 0, NOP_BIT, TERM
+
+.int3_node:
+  PAR_NODE G_CTRL, 0xCC, 0, 0, NOP_BIT, TERM
+
+.into_node:
+  PAR_NODE G_CTRL, 0xCE, 0, 0, NOP_BIT, TERM
+
+.iret_node:
+  PAR_NODE G_CTRL, 0xCF, 0, 0, NOP_BIT, TERM
+
+.aam_node:
+  PAR_NODE G_CTRL, 0xD4, 0, 0, IMM8_BIT, TERM
+
+.aad_node:
+  PAR_NODE G_CTRL, 0xD5, 0, 0, IMM8_BIT, TERM
+
+.salc_node:
+  PAR_NODE G_CTRL, 0xD6, 0, 0, NOP_BIT, TERM
+
+.xlat_node:
+  PAR_NODE G_CTRL, 0xD7, 0, 0, NOP_BIT, TERM
+
+.loopnz_node:
+  PAR_NODE G_CTRL, 0xE0, 0, 0, IMM8_BIT + REL8_BIT, TERM
+
+.loopz_node:
+  PAR_NODE G_CTRL, 0xE1, 0, 0, IMM8_BIT + REL8_BIT, TERM
+
+.loop_node:
+  PAR_NODE G_CTRL, 0xE2, 0, 0, IMM8_BIT + REL8_BIT, TERM
+
+.jcxz_node:
+  PAR_NODE G_CTRL, 0xE3, 0, 0, IMM8_BIT + REL8_BIT, TERM
+
+.in_node:
+  PAR_NODE R8_AL, 0x00, 1, 3, 0, REG
+    PAR_NODE R16_DX, 0xEC, 0, 1, 0, REG + TERM
+    PAR_NODE G_CTRL, 0xE4, 0, 0, IMM8_BIT, TERM
+  PAR_NODE R16_AX, 0x00, 1, 3, 0, REG
+    PAR_NODE R16_DX, 0xED, 0, 1, 0, OPSIZE + REG + TERM
+    PAR_NODE G_CTRL, 0xE5, 0, 0, IMM8_BIT, OPSIZE + TERM
+  PAR_NODE R32_EAX, 0x00, 1, 0, 0, REG
+    PAR_NODE R16_DX, 0xED, 0, 1, 0, REG + TERM
+    PAR_NODE G_CTRL, 0xE5, 0, 0, IMM8_BIT, TERM
+
+.out_node:
+  PAR_NODE G_CTRL, 0x00, 1, 4, IMM8_BIT, 0
+    PAR_NODE R8_AL, 0xE6, 0, 1, IMM8_BIT, REG + TERM
+    PAR_NODE R16_AX, 0xE7, 0, 1, IMM8_BIT, OPSIZE + REG + TERM
+    PAR_NODE R32_EAX, 0xE7, 0, 0, IMM8_BIT, REG + TERM
+  PAR_NODE R16_DX, 0x00, 1, 0, 0, REG
+    PAR_NODE R8_AL, 0xEE, 0, 1, 0, REG + TERM
+    PAR_NODE R16_AX, 0xEF, 0, 1, 0, OPSIZE + REG + TERM
+    PAR_NODE R32_EAX, 0xEF, 0, 0, 0, REG + TERM
+
+.int1_node:
+  PAR_NODE G_CTRL, 0xF1, 0, 0, NOP_BIT, TERM
+
+.hlt_node:
+  PAR_NODE G_CTRL, 0xF4, 0, 0, NOP_BIT, TERM
+
+.cmc_node:
+  PAR_NODE G_CTRL, 0xF5, 0, 0, NOP_BIT, TERM
+
+.div_node:
+  PAR_NODE G_REG32, 0xf7, 0, 1, 0, MODRM + OPNUM7 + TERM
+  PAR_NODE G_REG8, 0xf6, 0, 1, 0, OPSIZE + MODRM + OPNUM7 + TERM
+  PAR_NODE G_REG16, 0xf7, 0, 1, 0, MODRM + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 1, MEM32_BIT, MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0xf6, 0, 1, MEM8_BIT, MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + OPNUM7 + TERM
+
+.idiv_node:
+  PAR_NODE G_REG32, 0xf7, 0, 1, 0, MODRM + OPNUM8 + TERM
+  PAR_NODE G_REG8, 0xf6, 0, 1, 0, OPSIZE + MODRM + OPNUM8 + TERM
+  PAR_NODE G_REG16, 0xf7, 0, 1, 0, MODRM + OPNUM8 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 1, MEM32_BIT, MODRM + SIB + OPNUM8 + TERM
+  PAR_NODE G_CTRL, 0xf6, 0, 1, MEM8_BIT, MODRM + SIB + OPNUM8 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + OPNUM8 + TERM
+
+.neg_node:
+  PAR_NODE G_REG32, 0xf7, 0, 1, 0, MODRM + OPNUM4 + TERM
+  PAR_NODE G_REG8, 0xf6, 0, 1, 0, OPSIZE + MODRM + OPNUM4 + TERM
+  PAR_NODE G_REG16, 0xf7, 0, 1, 0, MODRM + OPNUM4 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 1, MEM32_BIT, MODRM + SIB + OPNUM4 + TERM
+  PAR_NODE G_CTRL, 0xf6, 0, 1, MEM8_BIT, MODRM + SIB + OPNUM4 + TERM
+  PAR_NODE G_CTRL, 0xf7, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + OPNUM4 + TERM
+
+.clc_node:
+  PAR_NODE G_CTRL, 0xF8, 0, 0, NOP_BIT, TERM
+
+.stc_node:
+  PAR_NODE G_CTRL, 0xF9, 0, 0, NOP_BIT, TERM
+
+.cli_node:
+  PAR_NODE G_CTRL, 0xFA, 0, 0, NOP_BIT, TERM
+
+.sti_node:
+  PAR_NODE G_CTRL, 0xFB, 0, 0, NOP_BIT, TERM
+
+.cld_node:
+  PAR_NODE G_CTRL, 0xFC, 0, 0, NOP_BIT, TERM
+
+.std_node:
+  PAR_NODE G_CTRL, 0xFD, 0, 0, NOP_BIT, TERM
+
+.cwde_node:
+  PAR_NODE G_CTRL, 0x98, 0, 0, NOP_BIT, TERM
+
+.cdq_node:
+  PAR_NODE G_CTRL, 0x99, 0, 0, NOP_BIT, TERM
+
 ; extended instructions
 .je_node:
-  PAR_NODE G_CTRL, 0x84, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x84, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jz_node:
-  PAR_NODE G_CTRL, 0x84, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x84, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jl_node:
-  PAR_NODE G_CTRL, 0x8C, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8C, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jle_node:
-  PAR_NODE G_CTRL, 0x8E, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8E, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jg_node:
-  PAR_NODE G_CTRL, 0x8F, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8F, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jge_node:
-  PAR_NODE G_CTRL, 0x8D, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8D, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .ja_node:
-  PAR_NODE G_CTRL, 0x87, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x87, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jae_node:
-  PAR_NODE G_CTRL, 0x82, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x82, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jb_node:
-  PAR_NODE G_CTRL, 0x82, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x82, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jbe_node:
-  PAR_NODE G_CTRL, 0x86, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x86, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jc_node:
-  PAR_NODE G_CTRL, 0x82, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x82, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .js_node:
-  PAR_NODE G_CTRL, 0x88, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x88, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jo_node:
-  PAR_NODE G_CTRL, 0x80, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x80, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jp_node:
-  PAR_NODE G_CTRL, 0x8A, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8A, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jpo_node:
-  PAR_NODE G_CTRL, 0x8B, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8B, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jpe_node:
-  PAR_NODE G_CTRL, 0x8A, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8A, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jne_node:
-  PAR_NODE G_CTRL, 0x85, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x85, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jnz_node:
-  PAR_NODE G_CTRL, 0x85, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x85, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jnc_node:
-  PAR_NODE G_CTRL, 0x83, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x83, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jns_node:
-  PAR_NODE G_CTRL, 0x89, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x89, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jno_node:
-  PAR_NODE G_CTRL, 0x81, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x81, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .jnp_node:
-  PAR_NODE G_CTRL, 0x8B, 0, 0, IMM32_BIT + OFFSET_BIT, TWOBYTE + TERM
+  PAR_NODE G_CTRL, 0x8B, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
 
 .movzx_node:
   PAR_NODE G_REG32, 0x00, 1, 5, 0, 0
@@ -1288,3 +2186,279 @@ par_trie:
 
 .ud2_node:
   PAR_NODE G_CTRL, 0x0B, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.sldt_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 0, TWOBYTE + MODRM + OPNUM1 + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + OPNUM1 + TERM
+  PAR_NODE G_CTRL, 0x00, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM1 + TERM
+
+.str_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 0, TWOBYTE + MODRM + OPNUM2 + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + OPNUM2 + TERM
+  PAR_NODE G_CTRL, 0x00, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM2 + TERM
+
+.lldt_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 0, TWOBYTE + MODRM + OPNUM3 + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + OPNUM3 + TERM
+  PAR_NODE G_CTRL, 0x00, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM3 + TERM
+
+.ltr_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 0, TWOBYTE + MODRM + OPNUM4 + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + OPNUM4 + TERM
+  PAR_NODE G_CTRL, 0x00, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM4 + TERM
+
+.verr_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 0, TWOBYTE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_CTRL, 0x00, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM5 + TERM
+
+.verw_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 0, TWOBYTE + MODRM + OPNUM6 + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + OPNUM6 + TERM
+  PAR_NODE G_CTRL, 0x00, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM6 + TERM
+
+.lar_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 3, 0
+    PAR_NODE G_REG16, 0x02, 0, 1, REGFIRST_BIT, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x02, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, 0
+    PAR_NODE G_REG16, 0x02, 0, 1, REGFIRST_BIT, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x02, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.lsl_node:
+  PAR_NODE G_REG32, 0x00, 0, 1, 3, 0
+    PAR_NODE G_REG16, 0x03, 0, 1, REGFIRST_BIT, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x03, 0, 0, MEM16_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 0, 1, 0, 0
+    PAR_NODE G_REG16, 0x03, 0, 1, REGFIRST_BIT, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0x03, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.clts_node:
+  PAR_NODE G_CTRL, 0x06, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.invd_node:
+  PAR_NODE G_CTRL, 0x08, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.wbinvd_node:
+  PAR_NODE G_CTRL, 0x09, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.wrmsr_node:
+  PAR_NODE G_CTRL, 0x30, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.rdtsc_node:
+  PAR_NODE G_CTRL, 0x31, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.rdmsr_node:
+  PAR_NODE G_CTRL, 0x32, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.rdpmc_node:
+  PAR_NODE G_CTRL, 0x33, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.sysenter_node:
+  PAR_NODE G_CTRL, 0x34, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.sysexit_node:
+  PAR_NODE G_CTRL, 0x35, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.cpuid_node:
+  PAR_NODE G_CTRL, 0xA2, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.bt_node:
+  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG32, 0xA3, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xA3, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, TWOBYTE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG16, 0xA3, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xA3, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0xA3, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0xA3, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM5 + TERM
+
+.shld_node:
+  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG32, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xA4, 0, 1, IMM8_BIT, TWOBYTE + MODRM + TERM
+      PAR_NODE R8_CL, 0xA5, 0, 0, 0, TWOBYTE + MODRM + REG + TERM
+  PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xA4, 0, 1, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + TERM
+      PAR_NODE R8_CL, 0xA5, 0, 0, 0, OPSIZE + TWOBYTE + MODRM + REG + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 4, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xA4, 0, 1, IMM8_BIT + MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+      PAR_NODE R8_CL, 0xA5, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + REG + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xA4, 0, 1, IMM8_BIT + MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+      PAR_NODE R8_CL, 0xA5, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + REG + TERM
+
+.rsm_node:
+  PAR_NODE G_CTRL, 0xAA, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.bts_node:
+  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG32, 0xAB, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xAB, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, TWOBYTE + MODRM + OPNUM6 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG16, 0xAB, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xAB, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM6 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0xAB, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM6 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0xAB, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM6 + TERM
+
+.shrd_node:
+  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG32, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xAC, 0, 1, IMM8_BIT, TWOBYTE + MODRM + TERM
+      PAR_NODE R8_CL, 0xAD, 0, 0, 0, TWOBYTE + MODRM + REG + TERM
+  PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xAC, 0, 1, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + TERM
+      PAR_NODE R8_CL, 0xAD, 0, 0, 0, OPSIZE + TWOBYTE + MODRM + REG + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 4, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xAC, 0, 1, IMM8_BIT + MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+      PAR_NODE R8_CL, 0xAD, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + REG + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+      PAR_NODE G_CTRL, 0xAC, 0, 1, IMM8_BIT + MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+      PAR_NODE R8_CL, 0xAD, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + REG + TERM
+
+.cmpxchg_node:
+  PAR_NODE G_REG8, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG8, 0xB0, 0, 0, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 2, MEM8_BIT, 0
+    PAR_NODE G_REG8, 0xB0, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG32, 0xB1, 0, 0, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 2, MEM8_BIT, 0
+    PAR_NODE G_REG32, 0xB1, 0, 0, MEM8_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 2, 0, 0
+    PAR_NODE G_REG16, 0xB1, 0, 0, 0, OPSIZE + TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0xB1, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.lss_node:
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_CTRL, 0xB2, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0xB2, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.btr_node:
+  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG32, 0xB3, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xB3, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, TWOBYTE + MODRM + OPNUM7 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG16, 0xB3, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xB3, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0xB3, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0xB3, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM7 + TERM
+
+.lfs_node:
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_CTRL, 0xB4, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0xB4, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.lgs_node:
+  PAR_NODE G_REG32, 0x00, 1, 2, 0, 0
+    PAR_NODE G_CTRL, 0xB5, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 0, 0, 0
+    PAR_NODE G_CTRL, 0xB5, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.btc_node:
+  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG32, 0xBB, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xBB, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, TWOBYTE + MODRM + OPNUM8 + TERM
+  PAR_NODE G_REG16, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG16, 0xBB, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xBB, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM8 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 3, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0xBB, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM8 + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0xBB, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_CTRL, 0xBA, 0, 0, IMM8_BIT, OPSIZE + TWOBYTE + MODRM + OPNUM8 + TERM
+
+.bsf_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0xBC, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xBC, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG16, 0xBC, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xBC, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 2, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0xBC, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0xBC, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.bsr_node:
+  PAR_NODE G_REG32, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG32, 0xBD, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xBD, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG16, 0xBD, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_CTRL, 0xBD, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 2, MEM32_BIT, 0
+    PAR_NODE G_REG32, 0xBD, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG16, 0xBD, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.xadd_node:
+  PAR_NODE G_REG32, 0x00, 1, 4, 0, 0
+    PAR_NODE G_REG8, 0xC0, 0, 1, 0, TWOBYTE + MODRM + TERM
+    PAR_NODE G_REG16, 0xC1, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_REG32, 0xC1, 0, 0, 0, TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 4, MEM32_BIT, 0
+    PAR_NODE G_REG8, 0xC0, 0, 1, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_REG16, 0xC1, 0, 1, MEM32_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_REG32, 0xC1, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + TERM
+  PAR_NODE G_REG16, 0x00, 1, 3, 0, 0
+    PAR_NODE G_REG8, 0xC0, 0, 1, 0, OPSIZE + TWOBYTE + MODRM + TERM
+    PAR_NODE G_REG16, 0xC1, 0, 0, 0, OPSIZE + TWOBYTE + MODRM + TERM
+  PAR_NODE G_CTRL, 0x00, 1, 0, MEM16_BIT, 0
+    PAR_NODE G_REG8, 0xC0, 0, 1, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+    PAR_NODE G_REG16, 0xC1, 0, 0, MEM16_BIT, OPSIZE + TWOBYTE + MODRM + SIB + TERM
+
+.bswap_node:
+  PAR_NODE G_REG32, 0xC8, 0, 0, 0, TWOBYTE + SHORT_OP + TERM
+
+.sgdt_node:
+  PAR_NODE G_CTRL, 0x01, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + OPNUM1 + TERM
+
+.sidt_node:
+  PAR_NODE G_CTRL, 0x01, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + OPNUM2 + TERM
+
+.lgdt_node:
+  PAR_NODE G_CTRL, 0x01, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + OPNUM3 + TERM
+
+.lidt_node:
+  PAR_NODE G_CTRL, 0x01, 0, 0, MEM32_BIT, TWOBYTE + MODRM + SIB + OPNUM4 + TERM
+
+.smsw_node:
+  PAR_NODE G_CTRL, 0x01, 0, 1, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM5 + TERM
+  PAR_NODE G_REG32, 0x01, 0, 1, 0, TWOBYTE + MODRM + OPNUM5 + TERM
+  PAR_NODE G_REG16, 0x01, 0, 0, 0, OPSIZE + TWOBYTE + OPNUM5 + TERM
+
+.lmsw_node:
+  PAR_NODE G_CTRL, 0x01, 0, 1, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_REG32, 0x01, 0, 1, 0, TWOBYTE + MODRM + OPNUM7 + TERM
+  PAR_NODE G_REG16, 0x01, 0, 0, 0, OPSIZE + TWOBYTE + OPNUM7 + TERM
