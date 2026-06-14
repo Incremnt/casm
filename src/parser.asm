@@ -619,15 +619,18 @@ ctrl_group:
   test      rbx, ENTRY_BIT                         ;
   jz        .skip_entry_bit                        ;
   mov       byte [rdi + 28], 'E'                   ;
+  sub       r14, 4                                 ;
+  sub       dword [current_ptr], 4                 ;
+  sub       r15d, 4                                ;
 .skip_entry_bit:
   test      rbx, REL8_BIT                          ;
   jz        .del_not_rel8                          ;
   mov       byte [rdi + 28], 'B'                   ;
   mov       eax, dword [current_ptr]               ;
   mov       dword [rdi + 24], eax                  ;
-  inc       r14                                    ;
-  inc       qword [current_ptr]                    ;
-  inc       r15d                                   ;
+  sub       r14, 3                                 ;
+  sub       dword [current_ptr], 3                 ;
+  sub       r15d, 3                                ;
   jmp       .del_not_rel32                         ;
 .del_not_rel8:
   test      rbx, REL32_BIT                         ;
@@ -635,10 +638,10 @@ ctrl_group:
   mov       esi, dword [current_ptr]               ;
   add       esi, 4                                 ;
   sub       dword [r14], esi                       ;
+.del_not_rel32:
   add       r14, 4                                 ;
   add       dword [current_ptr], 4                 ;
   add       r15d, 4                                ;
-.del_not_rel32:
   add       qword [deladr_offset], 29              ;
 .del_skip_adr:
   mov       ax, word [r12]                         ;
