@@ -72,6 +72,8 @@ ctrl_group:
   cmp       byte [rdi + 28], 'E'                   ;
   jne       .skip_deladdr_entry                    ;
   mov       dword [custom_entry], esi              ;
+  add       rdi, 29                                ;
+  jmp       .next_deladdr                          ;
 .skip_deladdr_entry:
   cmp       byte [rdi + 28], 'B'                   ;
   jne       .skip_deladdr_rel8                     ;
