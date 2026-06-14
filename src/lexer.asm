@@ -67,6 +67,10 @@ lexer:
   mov       word [rbx + 'l' * 2], lex_trie.l_node - lex_trie         ;
   mov       word [rbx + 'r' * 2], lex_trie.r_node - lex_trie         ;
   mov       word [rbx + 'u' * 2], lex_trie.u_node - lex_trie         ;
+  mov       word [rbx + 'f' * 2], lex_trie.f_node - lex_trie         ;
+  mov       word [rbx + 'g' * 2], lex_trie.g_node - lex_trie         ;
+  mov       word [rbx + 'v' * 2], lex_trie.v_node - lex_trie         ;
+  mov       word [rbx + 'h' * 2], lex_trie.h_node - lex_trie         ;
   mov       word [rbx + '.' * 2], lex_trie.sec_node - lex_trie       ;
 
   mov       rcx, valid_char_tbl          ; init valid characters table
@@ -350,6 +354,7 @@ write_number:
   jge       unk_tkn_err                      ;
   lea       rdi, [rdi + rdi * 4]             ;
   shl       rdi, 1                           ;
+  jc        long_num_err                     ;
   lea       rdi, [rdi + rsi]                 ; error if number is longer than 4 bytes
   inc       r12                              ;
   movzx     rsi, byte [r12]                  ;
