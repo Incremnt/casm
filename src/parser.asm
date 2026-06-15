@@ -822,22 +822,40 @@ traverse_operands:
   jz        .go_to_sibling                           ;
 
 .continue_traverse:
-  test      word [rsi + PAR_NODEFLAGS_OFF], REG        ;
-  jz        .cmp_group                                 ;
-  cmp       al, G_REG32                                ;
-  je        .cmp_reg                                   ;
-  cmp       al, G_REG16                                ;
-  je        .cmp_reg                                   ;
-  cmp       al, G_REG8                                 ;
-  je        .cmp_reg                                   ;
-  cmp       al, G_SREG                                 ;
-  je        .cmp_reg                                   ;
-  jmp       .go_to_sibling                             ;
+  test      word [rsi + PAR_PARFLAGS_OFF], REG_BIT   ;
+  jnz       .cmp_reg                                 ;
+  test      word [rsi + PAR_NODEFLAGS_OFF], SREG     ;
+  jz        .cmp_group                               ;
 .cmp_reg:
-  cmp       ah, byte [rsi]                             ;
-  jne       .go_to_sibling                             ;
-  mov       byte [r13 + 1], R_CONST                    ;
-  jmp       .group_matches                             ;
+  cmp       al, G_REG32                              ;
+  je        .cmp_reg32                               ;
+  cmp       al, G_REG16                              ;
+  je        .cmp_reg16                               ;
+  cmp       al, G_REG8                               ;
+  je        .cmp_reg8                                ;
+  cmp       al, G_SREG                               ;
+  je        .cmp_sreg                                ;
+  jmp       .go_to_sibling                           ;
+.cmp_reg32:
+  test      word [rsi + PAR_PARFLAGS_OFF], REG32_BIT ;
+  jz        .go_to_sibling                           ;
+  mov       byte [r13 + 1], R_CONST                  ;
+  jmp       .group_matches                           ;
+.cmp_reg16:
+  test      word [rsi + PAR_PARFLAGS_OFF], REG16_BIT ;
+  jz        .go_to_sibling                           ;
+  mov       byte [r13 + 1], R_CONST                  ;
+  jmp       .group_matches                           ;
+.cmp_reg8:
+  test      word [rsi + PAR_PARFLAGS_OFF], REG8_BIT  ;
+  jz        .go_to_sibling                           ;
+  mov       byte [r13 + 1], R_CONST                  ;
+  jmp       .group_matches                           ;
+.cmp_sreg:
+  test      word [rsi + PAR_NODEFLAGS_OFF], SREG     ;
+  jz        .go_to_sibling                           ;
+  mov       byte [r13 + 1], R_CONST                  ;
+  jmp       .group_matches                           ;
 .cmp_group:
   cmp       al, byte [rsi]                         ;
   je        .group_matches                         ;
