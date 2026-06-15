@@ -827,6 +827,7 @@ traverse_operands:
   test      word [rsi + PAR_NODEFLAGS_OFF], SREG     ;
   jz        .cmp_group                               ;
 .cmp_reg:
+  mov       dl, ah                                   ;
   cmp       al, G_REG32                              ;
   je        .cmp_reg32                               ;
   cmp       al, G_REG16                              ;
@@ -839,21 +840,29 @@ traverse_operands:
 .cmp_reg32:
   test      word [rsi + PAR_PARFLAGS_OFF], REG32_BIT ;
   jz        .go_to_sibling                           ;
+  cmp       dl, byte [rsi]                           ;
+  jne       .go_to_sibling                           ;
   mov       byte [r13 + 1], R_CONST                  ;
   jmp       .group_matches                           ;
 .cmp_reg16:
   test      word [rsi + PAR_PARFLAGS_OFF], REG16_BIT ;
   jz        .go_to_sibling                           ;
+  cmp       dl, byte [rsi]                           ;
+  jne       .go_to_sibling                           ;
   mov       byte [r13 + 1], R_CONST                  ;
   jmp       .group_matches                           ;
 .cmp_reg8:
   test      word [rsi + PAR_PARFLAGS_OFF], REG8_BIT  ;
   jz        .go_to_sibling                           ;
+  cmp       dl, byte [rsi]                           ;
+  jne       .go_to_sibling                           ;
   mov       byte [r13 + 1], R_CONST                  ;
   jmp       .group_matches                           ;
 .cmp_sreg:
   test      word [rsi + PAR_NODEFLAGS_OFF], SREG     ;
   jz        .go_to_sibling                           ;
+  cmp       dl, byte [rsi]                           ;
+  jne       .go_to_sibling                           ;
   mov       byte [r13 + 1], R_CONST                  ;
   jmp       .group_matches                           ;
 .cmp_group:
