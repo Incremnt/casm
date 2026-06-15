@@ -887,6 +887,16 @@ traverse_operands:
   jne       .skip_address                          ;
   inc       r13                                    ;
 .skip_address_skip:
+  cmp       byte [r13 - 1], C_STR                  ;
+  jne       .skip_str_skip                         ;
+.mem_skip_str:
+  mov       dx, word [r13]                         ;
+  inc       r13                                    ;
+  xchg      dh, dl                                 ;
+  cmp       dx, C_STR                              ;
+  jne       .mem_skip_str                          ;
+  inc       r13                                    ;
+.skip_str_skip:
   cmp       byte [r13 - 1], C_MEMEN                ;
   jne       .skip_mem                              ;
 .not_mem:
