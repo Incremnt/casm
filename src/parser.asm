@@ -348,22 +348,24 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_mod_reg:
-  cmp       byte [r12 + 1], R_CONST                ;
-  je        skip_ir                                ;
   test      rbx, REGFIRST_BIT                      ;
   jnz       .not_empty_rm                          ;
+  or        rbx, REGFIRST_BIT                      ;
+  cmp       byte [r12 + 1], R_CONST                ;
+  je        skip_ir                                ;
   mov       dl, byte [r12 + 1]                     ;
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
-  or        rbx, REGFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .not_empty_rm:
+  xor       rbx, REGFIRST_BIT                      ;
+  cmp       byte [r12 + 1], R_CONST                ;
+  je        skip_ir                                ;
   mov       dl, byte [r12 + 1]                     ;
   shl       dl, 3                                  ;
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
-  xor       rbx, REGFIRST_BIT                      ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
