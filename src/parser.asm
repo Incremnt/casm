@@ -627,6 +627,7 @@ ctrl_group:
   jz        .del_not_rel8                          ;
   mov       byte [rdi + 28], 'B'                   ;
   mov       eax, dword [current_ptr]               ;
+  inc       eax                                    ;
   mov       dword [rdi + 24], eax                  ;
   sub       r14, 3                                 ;
   sub       dword [current_ptr], 3                 ;
