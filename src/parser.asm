@@ -903,6 +903,8 @@ traverse_operands:
   cmove     r9d, dword [r13 - 1]                   ;
   cmp       byte [r13 - 2], G_CTRL                 ;
   jne       .skip_mem                              ;
+  cmp       byte [r13 - 1], C_LF                   ;
+  je        invalid_expression_err                 ;
   cmp       byte [r13 - 1], C_NUM                  ;
   jne       .skip_num_skip                         ;
   lea       r13, [r13 + 4]                         ;
