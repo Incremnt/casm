@@ -171,6 +171,10 @@ invalid_char_err:
   mov       rsi, e_invalid_char_msg
   jmp       err_exit_line
 
+invalid_name_err:
+  mov       rsi, e_invalid_name_msg
+  jmp       err_exit_line
+
 invalid_expression_err:
   mov       rsi, e_invalid_expr_msg
   jmp       err_exit_line
@@ -242,6 +246,7 @@ e_read_msg         db ESC, '[31m', "[Error]: SYS_READ failed",                ES
 e_unktkn_msg       db ESC, '[31m', "[Error]: Unknown token",                  ESC, '[0m', LF, NUL
 e_longnum_msg      db ESC, '[31m', "[Error]: Number is too long",             ESC, '[0m', LF, NUL
 e_invalid_char_msg db ESC, '[31m', "[Error]: Unexpected character in string", ESC, '[0m', LF, NUL
+e_invalid_name_msg db ESC, '[31m', "[Error]: Invalid label name",             ESC, '[0m', LF, NUL
 e_invalid_expr_msg db ESC, '[31m', "[Error]: Invalid expression",             ESC, '[0m', LF, NUL
 e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match",      ESC, '[0m', LF, NUL
 e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label",                ESC, '[0m', LF, NUL
