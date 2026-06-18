@@ -192,8 +192,7 @@ handle_del:
 
 .label_del:
   mov       si, C_LBL
-  inc       r12
-  jmp       write_long_del
+  jmp       write_label
 
 .number_del:
   xor       rdi, rdi
@@ -205,8 +204,7 @@ handle_del:
 
 .address_del:
   mov       si, C_ADR
-  inc       r12
-  jmp       write_long_del
+  jmp       write_label
 
 .lbracket_del:
   mov       si, C_MEMST
@@ -248,45 +246,28 @@ write_del:
   movzx     rax, byte [r12]          ;
   jmp       next_lex                 ;
 
-write_long_del:
+write_label:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
   jl        .skip_call                       ;
   call      exp_ir_buf                       ;
 .skip_call:
-  mov       byte [r14 + 1], sil              ; set long delimiter start IR
+  mov       byte [r14 + 1], sil              ; set address/label delimiter start IR
   lea       r14, [r14 + 2]                   ;
-  movzx     rax, byte [r12]                  ;
+  movzx     rax, byte [r12 + 1]              ;
+  cmp       byte [rcx + rax], VALID          ;
+  je        invalid_name_err                 ;
 .write_insides:
   cmp       r14, r9                          ;
   jl        .skip_call2                      ;
-  push      rax                              ;
   call      exp_ir_buf                       ;
-  pop       rax                              ;
 .skip_call2:
-  cmp       al, SPC                          ; error if name contains non-letter characters
-  jle       invalid_char_err                 ;
-  mov       byte [r14], al                   ; write name in IR buffer
-  inc       r14                              ;
   inc       r12                              ;
   movzx     rax, byte [r12]                  ;
-  cmp       byte [rbp + rax], LF_DEL         ; end write loop if found skip delimiter
+  cmp       byte [rcx + rax], VALID          ;
   je        .end_write                       ;
-  cmp       byte [rbp + rax], CMT_DEL        ;
-  je        .end_write                       ;
-  cmp       byte [rbp + rax], COM_DEL        ;
-  je        .end_write                       ;
-  cmp       byte [rbp + rax], RBR_DEL        ;
-  je        .end_write                       ;
-  cmp       byte [rbp + rax], LBR_DEL        ;
-  je        .end_write                       ;
-  cmp       byte [rbp + rax], PLS_DEL        ;
-  je        .end_write                       ;
-  cmp       byte [rbp + rax], MUL_DEL        ;
-  je        .end_write                       ;
-  cmp       byte [rbp + rax], IGN_DEL        ;
-  je        .end_write                       ;
-  cmp       al, NUL                          ;
-  jne       .write_insides                   ;
+  mov       byte [r14], al                   ; write name in IR buffer
+  inc       r14                              ;
+  jmp       .write_insides                   ;
 .end_write:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
   jl        .skip_call3                      ;
