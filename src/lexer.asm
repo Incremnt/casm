@@ -264,7 +264,7 @@ write_long_del:
   pop       rax                              ;
 .skip_call2:
   cmp       al, SPC                          ; error if name contains non-letter characters
-  jl        invalid_char_err                 ;
+  jle       invalid_char_err                 ;
   mov       byte [r14], al                   ; write name in IR buffer
   inc       r14                              ;
   inc       r12                              ;
