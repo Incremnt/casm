@@ -744,7 +744,11 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_comma:
-  lea       r12, [r12 + 2]                         ; skip it
+  mov       ax, word [r12 + 2]                     ;
+  xchg      ah, al                                 ;
+  cmp       ax, C_LF                               ;
+  je        trailing_chars_err                     ;
+  lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
 .handle_lf:
@@ -796,13 +800,6 @@ traverse_operands:
   je        .cmp_mem16                               ;
   cmp       ah, C_DWORD                              ;
   je        .cmp_mem32                               ;
-  test      r10, r10                                 ;
-  jz        .not_longest_match                       ;
-  cmp       ah, C_LF                                 ;
-  jne       invalid_operands_err                     ;
-  mov       rsi, r10                                 ;
-  jmp       .write_opcode                            ;
-.not_longest_match:
   cmp       ah, C_LF                                 ;
   je        .cmp_no_operand                          ;
   jmp       invalid_operands_err                     ;
@@ -913,12 +910,12 @@ traverse_operands:
 .skip_num_skip:
   cmp       byte [r13 - 1], C_ADR                  ;
   jne       .skip_address_skip                     ;
-.skip_address:
+.mem_skip_address:
   mov       dx, word [r13]                         ;
   inc       r13                                    ;
   xchg      dh, dl                                 ;
   cmp       dx, C_ADR                              ;
-  jne       .skip_address                          ;
+  jne       .mem_skip_address                      ;
   inc       r13                                    ;
 .skip_address_skip:
   cmp       byte [r13 - 1], C_STR                  ;
@@ -948,10 +945,11 @@ traverse_operands:
 .not_str:
   cmp       ah, C_ADR                              ;
   jne       .not_address                           ;
-.skip_address2:
+  lea       r13, [r13 + 2]                         ;
+.skip_address:
   inc       r13                                    ;
   cmp       byte [r13 - 1], C_ADR                  ;
-  jne       .skip_address2                         ;
+  jne       .skip_address                          ;
 .not_address:
   mov       ax, word [r13]                         ;
   xchg      ah, al                                 ;
@@ -999,6 +997,10 @@ traverse_operands:
   movzx     rax, word [r13]                           ;
   jmp       traverse_operands                         ;
 .write_opcode:
+  mov       ax, word [r13]                            ;
+  xchg      ah, al                                    ;
+  cmp       ax, C_LF                                  ;
+  jne       trailing_chars_err                        ;
   call      operand_mode                              ;
   mov       al, byte [rsi + PAR_OP_OFF]               ; write opcode
   mov       di, word [rsi + PAR_NODEFLAGS_OFF]        ;
