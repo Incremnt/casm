@@ -260,6 +260,8 @@ ctrl_group:
   cmovnz    rcx, rsi                               ;
   test      rbx, IMM32_BIT                         ;
   cmovnz    rcx, rdi                               ;
+  imul      rdx, rcx, IMM8_BIT                     ;
+  xor       rbx, rdx                               ;
   xor       rdx, rdx                               ;
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ; fix endianess
