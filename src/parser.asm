@@ -800,6 +800,13 @@ traverse_operands:
   je        .cmp_mem16                               ;
   cmp       ah, C_DWORD                              ;
   je        .cmp_mem32                               ;
+  test      r10, r10                                 ;
+  jz        .not_longest_match                       ;
+  cmp       ah, C_LF                                 ;
+  jne       invalid_operands_err                     ;
+  mov       rsi, r10                                 ;
+  jmp       .write_opcode                            ;
+.not_longest_match:
   cmp       ah, C_LF                                 ;
   je        .cmp_no_operand                          ;
   jmp       invalid_operands_err                     ;
