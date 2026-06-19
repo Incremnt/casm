@@ -195,6 +195,10 @@ invalid_operands_err:
   mov       rsi, e_invalid_opds_msg
   jmp       err_exit_line
 
+trailing_chars_err:
+  mov       rsi, e_trail_chars_msg
+  jmp       err_exit_line
+
 err_exit:
   xor       rcx, rcx
   push      rsi
@@ -252,6 +256,7 @@ e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match",      ES
 e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label",                ESC, '[0m', LF, NUL
 e_reljmp_range_msg db ESC, '[31m', "[Error]: Relative jump out of range",     ESC, '[0m', LF, NUL
 e_invalid_opds_msg db ESC, '[31m', "[Error]: Invalid operands",               ESC, '[0m', LF, NUL
+e_trail_chars_msg  db ESC, '[31m', "[Error]: Trailing characters",            ESC, '[0m', LF, NUL
 
 e_line_msg_st      db ESC, '[31m', "[Line]:  "
 E_LINE_MSG_ST_SZ      = $ - e_line_msg_st
