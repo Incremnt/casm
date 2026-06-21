@@ -649,8 +649,37 @@ ctrl_group:
   xor       rbx, LABEL_BIT                         ;
   inc       qword [style_points]                   ; labels are cool
   mov       r13, qword [labelbuf_ptr]              ;
-  add       r13, qword [labelbuf_slot_offset]      ;
   lea       r12, [r12 + 2]                         ;
+  xor       rax, rax                               ; check if label is already defined
+  mov       rcx, -1                                ;
+  mov       rdi, r12                               ;
+  repne     scasb                                  ;
+  not       rcx                                    ;
+  mov       rdx, rcx                               ;
+  mov       rdi, r13                               ;
+.defined_check:
+  cmp       byte [rdi], 0                          ;
+  je        .end_defined_check                     ;
+  mov       r8, rdi                                ;
+  xor       rax, rax                               ;
+  mov       rcx, -1                                ;
+  repne     scasb                                  ;
+  not       rcx                                    ;
+  cmp       rdx, rcx                               ;
+  je        .size_matches                          ;
+  add       rdi, 4                                 ;
+  jmp       .defined_check                         ;
+.size_matches:
+  push      rdi                                    ;
+  mov       rdi, r8                                ;
+  mov       rsi, r12                               ;
+  rep       cmpsb                                  ;
+  je        defined_lbl_err                        ;
+  pop       rdi                                    ;
+  add       rdi, 4                                 ;
+  jmp       .defined_check                         ;
+.end_defined_check:
+  add       r13, qword [labelbuf_slot_offset]      ;
 .write_label:
   mov       al, byte [r12]                         ;
   mov       byte [r13], al                         ;
@@ -1040,8 +1069,12 @@ traverse_operands:
 .cmp_group:
   cmp       byte [do_gen_64], 1                      ;
   jne       .not_reg64                               ;
-  test      word [rsi + PAR_NODEFLAGS_OFF], SHORT_OP ; seatch for compatible instructions
-  jnz       .go_to_sibling                           ;
+  test      word [rsi + PAR_NODEFLAGS_OFF], SHORT_OP ; search for compatible opcodes
+  jz        .compatible                              ;
+  cmp       byte [rsi + PAR_SIBOFF_OFF], 0           ;
+  je        incomp_instr_err                         ;
+  jmp       .go_to_sibling                           ;
+.compatible:
   cmp       al, G_REG64                              ;
   jne       .not_reg64                               ;
   cmp       byte [rsi], G_REG32                      ;
@@ -1258,8 +1291,6 @@ traverse_operands:
   jnz       .modrm                                    ;
   jmp       .skip_flags                               ;
 .short:
-  test      rbx, REXW_BIT + REXSZ_BIT                 ; short opcodes are incompatible with long mode
-  jnz       incomp_instr_err                          ;
   add       al, byte [r12 + 1]                        ; short opcodes always have register as first operand btw
   jmp       .skip_flags                               ;
 .modrm:
