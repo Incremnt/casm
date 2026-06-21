@@ -1089,6 +1089,12 @@ traverse_operands:
   jne       .mem_not_r64                           ;
   or        rbx, RIPREL_BIT                        ;
 .mem_not_r64:
+  cmp       byte [r13 - 2], G_REG32                ;
+  jne       .mem_not_r32                           ;
+  cmp       byte [do_gen_64], 1                    ;
+  jne       .mem_not_r32                           ;
+  or        rbx, ADSIZE_BIT                        ;
+.mem_not_r32:
   cmp       byte [r13 - 2], G_CTRL                 ;
   jne       .skip_mem                              ;
   cmp       byte [r13 - 1], C_LF                   ;
@@ -1200,6 +1206,13 @@ traverse_operands:
   inc       r15                                       ;
   inc       qword [current_ptr]                       ;
 .skip_segpref:
+  test      rbx, ADSIZE_BIT                           ; handle prefix opcode flags
+  jz        .not_adsize                               ;
+  mov       byte [r14], 0x67                          ;
+  inc       r14                                       ;
+  inc       r15                                       ;
+  inc       qword [current_ptr]                       ;
+.not_adsize:
   test      di, REXW                                  ;
   jz        .not_node_rexw                            ;
   or        rbx, REXW_BIT                             ;
@@ -1217,7 +1230,7 @@ traverse_operands:
   inc       r15                                       ;
   inc       qword [current_ptr]                       ;
 .skip_rex:
-  test      di, OPSIZE                                ; handle prefix opcode flags
+  test      di, OPSIZE                                ;
   jz        .skip_opsize                              ;
   mov       byte [r14], 0x66                          ;
   inc       r14                                       ;
@@ -1242,25 +1255,25 @@ traverse_operands:
   add       al, byte [r12 + 1]                        ; short opcodes always have register as first operand btw
   jmp       .skip_flags                               ;
 .modrm:
-  call      modrm_mode                                           ;
-  inc       r14                                                  ;
-  mov       qword [modrm_ptr], r14                               ;
-  mov       byte [r14], 11000000b                                ; set reg/reg mode (will be overwrited by memory handlers anyway)
-  dec       r14                                                  ;
-  mov       byte [r14], al                                       ;
-  lea       r14, [r14 + 2]                                       ;
-  add       r15, 2                                               ;
-  add       qword [current_ptr], 2                               ;
-  movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]                   ;
-  and       rbx, PHFIRST_BIT + REXW_BIT + REXSZ_BIT + RIPREL_BIT ;
-  or        rbx, rsi                                             ;
-  test      di, OPNUM                                            ;
-  jz        .skip_opnum                                          ;
-  mov       dx, di                                               ;
-  and       dx, OPNUM                                            ;
-  bsr       dx, dx                                               ;
-  shl       dx, 3                                                ;
-  or        byte [r14 - 1], dl                                   ;
+  call      modrm_mode                                                        ;
+  inc       r14                                                               ;
+  mov       qword [modrm_ptr], r14                                            ;
+  mov       byte [r14], 11000000b                                             ; set reg/reg mode (will be overwrited by memory handlers anyway)
+  dec       r14                                                               ;
+  mov       byte [r14], al                                                    ;
+  lea       r14, [r14 + 2]                                                    ;
+  add       r15, 2                                                            ;
+  add       qword [current_ptr], 2                                            ;
+  movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]                                ;
+  and       rbx, PHFIRST_BIT + REXW_BIT + REXSZ_BIT + RIPREL_BIT + ADSIZE_BIT ;
+  or        rbx, rsi                                                          ;
+  test      di, OPNUM                                                         ;
+  jz        .skip_opnum                                                       ;
+  mov       dx, di                                                            ;
+  and       dx, OPNUM                                                         ;
+  bsr       dx, dx                                                            ;
+  shl       dx, 3                                                             ;
+  or        byte [r14 - 1], dl                                                ;
 .skip_opnum:
   test      di, SIB                                   ;
   jz        parse_ir                                  ;
@@ -1527,10 +1540,12 @@ sib_mode:
   mov       qword [group_jmp_tbl + G_REG64 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_sib_reg     ;
   cmp       byte [do_gen_64], 1                                                ;
-  jne       .not_rexw                                                          ;
+  jne       .not_ad64                                                          ;
+  test      rbx, ADSIZE_BIT                                                    ;
+  jnz       .not_ad64                                                          ;
   mov       qword [group_jmp_tbl + G_REG64 * 8], ctrl_group.handle_sib_reg     ;
   mov       qword [group_jmp_tbl + G_REG32 * 8], invalid_expression_err        ;
-.not_rexw:
+.not_ad64:
   mov       qword [group_jmp_tbl + G_REG16 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], invalid_expression_err         ;
   mov       qword [group_jmp_tbl + G_SREG * 8], invalid_expression_err         ;
