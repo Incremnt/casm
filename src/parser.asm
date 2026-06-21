@@ -65,24 +65,25 @@ ctrl_group:
   cmp       byte [r13], 0                          ;
   jne       .sec_next_label                        ;
   mov       esi, dword [r13 + 1]                   ;
-  cmp       byte [rdi + 28], '-'                   ;
+  cmp       byte [rdi + 32], '-'                   ;
   jne       .skip_addr_neg                         ;
   neg       esi                                    ;
 .skip_addr_neg:
-  cmp       byte [rdi + 28], 'E'                   ;
+  cmp       byte [rdi + 32], 'E'                   ;
   jne       .skip_deladdr_entry                    ;
   mov       dword [custom_entry], esi              ;
-  add       rdi, 29                                ;
+  add       rdi, 33                                ;
   jmp       .next_deladdr                          ;
 .skip_deladdr_entry:
-  cmp       byte [rdi + 28], 'B'                   ;
+  cmp       byte [rdi + 32], 'B'                   ;
   jne       .skip_deladdr_rel8                     ;
   sub       esi, dword [rdi + 24]                  ;
+  dec       esi                                    ;
   cmp       esi, 127                               ;
   jg        rel_jmp_range_err                      ;
 .skip_deladdr_rel8:
   add       dword [r14], esi                       ;
-  add       rdi, 29                                ;
+  add       rdi, 33                                ;
   jmp       .next_deladdr                          ;
 .sec_next_label:
   cmp       byte [r13], 0                          ;
@@ -98,11 +99,6 @@ ctrl_group:
 .end_deladr_write:
   pop       r14                                    ;
   pop       qword [current_line]                   ;
-  cmp       dword [custom_entry], 0                ;
-  je        .default_entry                         ; write custom entry if there was .entry directive
-  mov       edi, dword [custom_entry]              ;
-  mov       dword [ehdr.entry], edi                ;
-.default_entry:
   test      rbx, PHFIRST_BIT                       ;
   jnz       parser_end                             ;
   cmp       rbp, r11                               ;
@@ -118,46 +114,90 @@ ctrl_group:
   lea       r11, [r11 * 2]                         ; expand by x2 more next time
   add       r11, qword [phdrbuf_ptr]               ;
 .skip_expand:
+  cmp       byte [do_gen_64], 1                    ;
+  je        .amd64                                 ;
+  cmp       dword [custom_entry], 0                ;
+  je        .default_entry                         ; write custom entry if there was .entry directive
+  mov       edi, dword [custom_entry]              ;
+  mov       dword [ehdr.entry], edi                ;
+.default_entry:
   mov       edx, dword [phdr_flags]                ;
   mov       dword [phdr.flags], edx                ;
   mov       edx, dword [phdr.filesz]               ;
   add       dword [phdr.offset], edx               ;
-  cmp       qword [phdrbuf_ptr], rbp               ;
   je        .first_segment                         ;
-  sub       r15d, PHENTSIZE                        ;
+  sub       r15, PHENTSIZE                         ;
 .first_segment:
   mov       dword [phdr.filesz], r15d              ;
   mov       dword [phdr.memsz], r15d               ;
-  mov       rdx, qword [phdr]                      ; write phdr to phdr buffer
-  mov       qword [rbp], rdx                       ;
-  mov       rdx, qword [phdr + 8]                  ;
-  mov       qword [rbp + 8], rdx                   ;
-  mov       rdx, qword [phdr + 16]                 ;
-  mov       qword [rbp + 16], rdx                  ;
-  mov       rdx, qword [phdr + 24]                 ;
-  mov       qword [rbp + 24], rdx                  ;
-  lea       rbp, [rbp + 32]                        ;
+  mov       rcx, PHENTSIZE                         ;
+  mov       rsi, phdr                              ;
+  mov       rdi, rbp                               ;
+  rep       movsb                                  ;
+  mov       rbp, rdi                               ;
   mov       rdi, qword [phdrbuf_ptr]               ;
-  movzx     ecx, word [ehdr.phnum]                 ;
-  cmp       ecx, 1                                 ;
+  movzx     rcx, word [ehdr.phnum]                 ;
+  cmp       rcx, 1                                 ;
   jne       .not_1_phdr                            ;
   mov       ecx, PHENTSIZE                         ;
   sub       dword [rdi + phdr.filesz - phdr], ecx  ;
   sub       dword [rdi + phdr.memsz - phdr], ecx   ;
   jmp       parser_end                             ;
+.amd64:
+  cmp       dword [custom_entry], 0                   ;
+  je        .default_entry64                          ;
+  mov       rdi, qword [custom_entry]                 ;
+  mov       qword [ehdr64.entry], rdi                 ;
+.default_entry64:
+  mov       edx, dword [phdr_flags]                   ;
+  mov       dword [phdr64.flags], edx                 ;
+  mov       rdx, qword [phdr64.filesz]                ;
+  add       qword [phdr64.offset], rdx                ;
+  je        .first_segment64                          ;
+  sub       r15, PHENTSIZE64                          ;
+.first_segment64:
+  mov       qword [phdr64.filesz], r15                ;
+  mov       qword [phdr64.memsz], r15                 ;
+  mov       rcx, PHENTSIZE64                          ;
+  mov       rsi, phdr64                               ;
+  mov       rdi, rbp                                  ;
+  rep       movsb                                     ;
+  mov       rbp, rdi                                  ;
+  mov       rdi, qword [phdrbuf_ptr]                  ;
+  movzx     rcx, word [ehdr64.phnum]                  ;
+  cmp       rcx, 1                                    ;
+  jne       .not_1_phdr64                             ;
+  mov       rcx, PHENTSIZE64                          ;
+  sub       qword [rdi + phdr64.filesz - phdr64], rcx ;
+  sub       qword [rdi + phdr64.memsz - phdr64], rcx  ;
+  jmp       parser_end                                ;
+.not_1_phdr64:
+  sub       rcx, 2                                 ;
+  imul      rcx, rcx, PHENTSIZE64                  ;
+  mov       rax, PHENTSIZE64                       ;
+  mov       rbx, phdr64.offset - phdr64            ;
+  mov       rsi, phdr64.vaddr - phdr64             ;
+  mov       rdx, phdr64.paddr - phdr64             ;
+  jmp       .fix_phdr_fields                       ;
 .not_1_phdr:
-  sub       ecx, 2                                 ;
-  imul      ecx, ecx, PHENTSIZE                    ;
+  sub       rcx, 2                                 ;
+  imul      rcx, rcx, PHENTSIZE                    ;
+  mov       rax, PHENTSIZE                         ;
+  mov       rbx, phdr.offset - phdr                ;
+  mov       rsi, phdr.vaddr - phdr                 ;
+  mov       rdx, phdr.paddr - phdr                 ;
 .fix_phdr_fields:
-  add       rdi, PHENTSIZE                         ;
+  add       rdi, rax                               ;
   cmp       rdi, rbp                               ;
   je        parser_end                             ;
-  add       dword [rdi + phdr.offset - phdr], ecx  ;
-  add       dword [rdi + phdr.vaddr - phdr], ecx   ;
-  add       dword [rdi + phdr.paddr - phdr], ecx   ;
+  add       qword [rdi + rbx], rcx                 ;
+  add       qword [rdi + rsi], rcx                 ;
+  add       qword [rdi + rdx], rcx                 ;
   jmp       .fix_phdr_fields                       ;
 
 .handle_num:
+  test      rbx, IMM64_BIT                         ;
+  jnz       .imm64                                 ;
   test      rbx, IMM_BIT                           ;
   jz        invalid_operands_err                   ;
   test      rbx, ENTRY_BIT                         ;
@@ -197,13 +237,30 @@ ctrl_group:
 .write_num:
   mov       al, byte [r12]                         ;
   mov       byte [r14], al                         ;
-  inc       r15d                                   ;
-  inc       dword [current_ptr]                    ;
+  inc       r15                                    ;
+  inc       qword [current_ptr]                    ;
   inc       r14                                    ;
   inc       r12                                    ;
   dec       rcx                                    ;
   jnz       .write_num                             ;
   mov       r12, rdx                               ;
+  jmp       parse_ir                               ;
+.imm64:
+  test      rbx, ENTRY_BIT                         ;
+  jz        .not_custom_entry64                    ;
+  xor       rax, rax                               ;
+  mov       eax, dword [r12 + 2]                   ;
+  mov       qword [custom_entry], rax              ;
+  lea       r12, [r12 + 6]                         ;
+  jmp       parse_ir                               ;
+.not_custom_entry64:
+  xor       rax, rax                               ;
+  mov       eax, dword [r12 + 2]                   ;
+  mov       qword [r14], rax                       ;
+  add       r14, 8                                 ;
+  add       r15, 8                                 ;
+  add       qword [current_ptr], 8                 ;
+  lea       r12, [r12 + 6]                         ;
   jmp       parse_ir                               ;
 
 .handle_sib_num:
@@ -274,8 +331,8 @@ ctrl_group:
   jne       .not_lf                                ;
   inc       qword [current_line]                   ;
 .not_lf:
-  inc       r15d                                   ;
-  inc       dword [current_ptr]                    ;
+  inc       r15                                    ;
+  inc       qword [current_ptr]                    ;
   inc       r12                                    ;
   inc       r14                                    ;
   inc       rdx                                    ;
@@ -288,8 +345,8 @@ ctrl_group:
   jg        op_sz_not_match_err                    ;
   sub       rcx, rdx                               ;
   add       r14, rcx                               ;
-  add       r15d, ecx                              ;
-  add       dword [current_ptr], ecx               ;
+  add       r15, rcx                               ;
+  add       qword [current_ptr], rcx               ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .write_all_str:
@@ -303,8 +360,8 @@ ctrl_group:
 .all_not_lf:
   inc       r12                                    ;
   inc       r14                                    ;
-  inc       r15d                                   ;
-  inc       dword [current_ptr]                    ;
+  inc       r15                                    ;
+  inc       qword [current_ptr]                    ;
   jmp       .write_all_str                         ;
 
 .handle_sib_str:
@@ -355,7 +412,13 @@ ctrl_group:
   or        rbx, REGFIRST_BIT                      ;
   cmp       byte [r12 + 1], R_CONST                ;
   je        skip_ir                                ;
+  cmp       byte [r12 + 1], REG_R8                 ;
+  jl        .mod_not_rexb                          ;
+  mov       rdi, qword [rex_ptr]                   ;
+  or        byte [rdi], 0x01                       ;
+.mod_not_rexb:
   mov       dl, byte [r12 + 1]                     ;
+  and       dl, 00000111b                          ;
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
   lea       r12, [r12 + 2]                         ;
@@ -364,8 +427,14 @@ ctrl_group:
   xor       rbx, REGFIRST_BIT                      ;
   cmp       byte [r12 + 1], R_CONST                ;
   je        skip_ir                                ;
+  cmp       byte [r12 + 1], REG_R8                 ;
+  jl        .mod_not_rexr                          ;
+  mov       rdi, qword [rex_ptr]                   ;
+  or        byte [rdi], 0x04                       ;
+.mod_not_rexr:
   mov       dl, byte [r12 + 1]                     ;
   shl       dl, 3                                  ;
+  and       dl, 00111000b                          ;
   mov       rdi, qword [modrm_ptr]                 ;
   or        byte [rdi], dl                         ;
   lea       r12, [r12 + 2]                         ;
@@ -376,6 +445,19 @@ ctrl_group:
   jnz       invalid_expression_err                 ;
   test      rbx, PLUS_BIT                          ;
   jz        invalid_expression_err                 ;
+  test      rbx, RIPREL_BIT                        ;
+  jz        .not_ripaddr                           ;
+  cmp       byte [r12 + 1], R64_RIP                ;
+  jne       invalid_expression_err                 ;
+  test      rbx, SIBRFIRST_BIT                     ;
+  jz        invalid_expression_err                 ;
+  xor       rbx, SIBRFIRST_BIT                     ;
+  mov       rdx, PLUS_BIT                          ;
+  not       rdx                                    ;
+  and       rbx, rdx                               ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.not_ripaddr:
   test      rbx, SIBRFIRST_BIT                     ;
   jz        .skip_modset                           ;
   mov       rdi, qword [modrm_ptr]                 ;
@@ -404,6 +486,11 @@ ctrl_group:
 .set_modrm:
   test      rbx, IDXFIRST_BIT                      ;
   jz        .set_modrm_base                        ;
+  cmp       byte [r12 + 1], REG_R8                 ;
+  jl        .mod_not_rexx                          ;
+  mov       rdi, qword [rex_ptr]                   ;
+  or        byte [rdi], 0x02                       ;
+.mod_not_rexx:
   mov       rdi, qword [modrm_ptr]                 ;
   and       byte [rdi], 00111000b                  ;
   or        byte [rdi], 10000100b                  ; set SIB + disp32 mode
@@ -414,6 +501,11 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .set_modrm_base:
+  cmp       byte [r12 + 1], REG_R8                 ;
+  jl        .mods_not_rexb                         ;
+  mov       rdi, qword [rex_ptr]                   ;
+  or        byte [rdi], 0x01                       ;
+.mods_not_rexb:
   test      rbx, BASFIRST_BIT                      ;
   jz        invalid_expression_err                 ;
   mov       rdi, qword [modrm_ptr]                 ;
@@ -430,7 +522,13 @@ ctrl_group:
 .write_base:
   test      rbx, BASFIRST_BIT                      ;
   jz        invalid_expression_err                 ;
+  cmp       byte [r12 + 1], REG_R8                 ;
+  jl        .not_rexb                              ;
+  mov       rdi, qword [rex_ptr]                   ;
+  or        byte [rdi], 0x01                       ;
+.not_rexb:
   mov       dl, byte [r12 + 1]                     ;
+  and       dl, 00000111b                          ;
   mov       rdi, qword [sib_ptr]                   ;
   and       byte [rdi], 11111000b                  ; unset base field
   or        byte [rdi], dl                         ;
@@ -444,6 +542,11 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .write_index:
+  cmp       byte [r12 + 1], REG_R8                 ;
+  jl        .not_rexx                              ;
+  mov       rdi, qword [rex_ptr]                   ;
+  or        byte [rdi], 0x02                       ;
+.not_rexx:
   mov       rdi, qword [sib_ptr]                   ;
   mov       dl, byte [rdi]                         ;
   and       dl, 00111000b                          ;
@@ -522,6 +625,21 @@ ctrl_group:
   jne       invalid_operands_err                   ;
   test      rbx, MEM32_BIT                         ;
   jz        invalid_operands_err                   ;
+  test      rbx, REXW_BIT                          ;
+  jnz       invalid_operands_err                   ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+
+.handle_qword:
+  call      sib_mode                               ;
+  cmp       byte [r12 + 2], G_CTRL                 ;
+  jne       invalid_operands_err                   ;
+  cmp       byte [r12 + 3], C_MEMST                ;
+  jne       invalid_operands_err                   ;
+  test      rbx, REXW_BIT                          ;
+  jz        invalid_operands_err                   ;
+  test      rbx, MEM32_BIT                         ;
+  jz        invalid_operands_err                   ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -550,7 +668,7 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_address:
-  test      rbx, IMM_BIT                           ;
+  test      rbx, IMM_BIT + IMM64_BIT               ;
   jz        invalid_operands_err                   ;
   inc       qword [style_points]                   ; addresses are cool
   lea       r12, [r12 + 2]                         ;
@@ -570,12 +688,17 @@ ctrl_group:
   jne       .next_label                            ;
   test      rbx, ENTRY_BIT                         ;
   jz        .not_entry                             ;
+  xor       rdi, rdi                               ;
   mov       edi, dword [r13 + 1]                   ;
-  mov       dword [custom_entry], edi              ;
+  cmp       byte [do_gen_64], 1                    ;
+  cmove     rdi, qword [r13 + 1]                   ;
+  mov       qword [custom_entry], rdi              ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .not_entry:
   mov       edi, dword [r13 + 1]                   ;
+  test      rbx, IMM64_BIT                         ;
+  jnz       .addr64                                ;
   test      rbx, REL8_BIT                          ;
   jz        .not_rel8                              ;
   sub       edi, dword [current_ptr]               ;
@@ -586,8 +709,8 @@ ctrl_group:
   jne       rel_jmp_range_err                      ;
   mov       byte [r14], dil                        ;
   inc       r14                                    ;
-  inc       dword [current_ptr]                    ;
-  inc       r15d                                   ;
+  inc       qword [current_ptr]                    ;
+  inc       r15                                    ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .not_rel8:
@@ -598,8 +721,15 @@ ctrl_group:
 .not_rel32:
   mov       dword [r14], edi                       ;
   lea       r14, [r14 + 4]                         ;
-  lea       r15d, [r15d + 4]                       ;
-  add       dword [current_ptr], 4                 ;
+  lea       r15, [r15 + 4]                         ;
+  add       qword [current_ptr], 4                 ;
+  lea       r12, [r12 + 2]                         ;
+  jmp       parse_ir                               ;
+.addr64:
+  mov       dword [r14], edi                       ;
+  lea       r14, [r14 + 8]                         ;
+  lea       r15, [r15 + 8]                         ;
+  add       qword [current_ptr], 8                 ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 .next_label:
@@ -622,20 +752,19 @@ ctrl_group:
   mov       qword [rdi + 16], rax                  ;
   test      rbx, ENTRY_BIT                         ;
   jz        .skip_entry_bit                        ;
-  mov       byte [rdi + 28], 'E'                   ;
+  mov       byte [rdi + 32], 'E'                   ;
   sub       r14, 4                                 ;
-  sub       dword [current_ptr], 4                 ;
-  sub       r15d, 4                                ;
+  sub       qword [current_ptr], 4                 ;
+  sub       r15, 4                                 ;
 .skip_entry_bit:
   test      rbx, REL8_BIT                          ;
   jz        .del_not_rel8                          ;
-  mov       byte [rdi + 28], 'B'                   ;
-  mov       eax, dword [current_ptr]               ;
-  inc       eax                                    ;
-  mov       dword [rdi + 24], eax                  ;
+  mov       byte [rdi + 32], 'B'                   ;
+  mov       rax, qword [current_ptr]               ;
+  mov       qword [rdi + 24], rax                  ;
   sub       r14, 3                                 ;
-  sub       dword [current_ptr], 3                 ;
-  sub       r15d, 3                                ;
+  sub       qword [current_ptr], 3                 ;
+  sub       r15, 3                                 ;
   jmp       .del_not_rel32                         ;
 .del_not_rel8:
   test      rbx, REL32_BIT                         ;
@@ -644,10 +773,16 @@ ctrl_group:
   add       esi, 4                                 ;
   sub       dword [r14], esi                       ;
 .del_not_rel32:
+  test      rbx, IMM64_BIT                         ;
+  jz        .del_not_addr64                        ;
+  add       qword [current_ptr], 4                 ;
   add       r14, 4                                 ;
-  add       dword [current_ptr], 4                 ;
-  add       r15d, 4                                ;
-  add       qword [deladr_offset], 29              ;
+  add       r15, 4                                 ;
+.del_not_addr64:
+  add       r14, 4                                 ;
+  add       qword [current_ptr], 4                 ;
+  add       r15, 4                                 ;
+  add       qword [deladr_offset], 33              ;
 .del_skip_adr:
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ;
@@ -710,10 +845,10 @@ ctrl_group:
   mov       qword [rdi + 16], rax                  ;
   test      rbx, MINUS_BIT                         ;
   jz        .skip_deladdr_neg                      ;
-  mov       byte [rdi + 28], '-'                   ;
+  mov       byte [rdi + 32], '-'                   ;
   xor       rbx, MINUS_BIT                         ;
 .skip_deladdr_neg:
-  add       qword [deladr_offset], 29              ;
+  add       qword [deladr_offset], 33              ;
 .sib_del_skip:
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ;
@@ -760,32 +895,43 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 instr_group:
-  test      rbx, INSTR_BIT                         ; traverse operands
-  jz        invalid_expression_err                 ;
-  xor       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ;
   movzx     rax, byte [r12 + 1]                    ;
   mov       rsi, qword [instr_node_tbl + rax * 8]  ;
-  lea       r12, [r12 + 2]                         ;
-  movzx     rax, word [r12]                        ;
-  mov       r13, r12                               ;
-  mov       r10, 0                                 ;
-  mov       r9, 0                                  ;
-  jmp       traverse_operands                      ;
+  jmp       instr                                  ;
 
 einst_group:
-  test      rbx, INSTR_BIT                         ; like normal instructions
-  jz        invalid_expression_err                 ;
   add       qword [style_points], 2                ; weird instructions are very cool
-  xor       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ;
   movzx     rax, byte [r12 + 1]                    ;
   mov       rsi, qword [einst_node_tbl + rax * 8]  ;
+  jmp       instr                                  ;
+
+instr:
+  test      rbx, INSTR_BIT                         ;
+  jz        invalid_expression_err                 ;
+  xor       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ;
   lea       r12, [r12 + 2]                         ;
-  movzx     rax, word [r12]                        ;
   mov       r13, r12                               ;
+  movzx     rax, word [r13]                        ;
   mov       r10, 0                                 ;
   mov       r9, 0                                  ;
 
 traverse_operands:
+  cmp       al, G_REG64                              ;
+  jne       .not_r64                                 ;
+  or        rbx, REXW_BIT                            ;
+  jmp       .continue_traverse                       ;
+.not_r64:
+  cmp       al, G_REG32                              ;
+  je        .rex_reg                                 ;
+  cmp       al, G_REG16                              ;
+  je        .rex_reg                                 ;
+  cmp       al, G_REG8                               ;
+  jne       .not_rexreg                              ;
+.rex_reg:
+  cmp       ah, REG_R8                               ;
+  jl        .not_rexreg                              ;
+  or        rbx, REXSZ_BIT                           ;
+.not_rexreg:
   cmp       al, G_CTRL                               ;
   jne       .continue_traverse                       ;
   cmp       ah, C_NUM                                ;
@@ -800,6 +946,8 @@ traverse_operands:
   je        .cmp_mem16                               ;
   cmp       ah, C_DWORD                              ;
   je        .cmp_mem32                               ;
+  cmp       ah, C_QWORD                              ;
+  je        .cmp_mem64                               ;
   test      r10, r10                                 ;
   jz        .not_longest_match                       ;
   cmp       ah, C_LF                                 ;
@@ -822,6 +970,11 @@ traverse_operands:
   test      word [rsi + PAR_PARFLAGS_OFF], MEM32_BIT ;
   jnz       .continue_traverse                       ;
   jmp       .go_to_sibling                           ;
+.cmp_mem64:
+  or        rbx, REXW_BIT                            ;
+  test      word [rsi + PAR_PARFLAGS_OFF], MEM32_BIT ;
+  jnz       .continue_traverse                       ;
+  jmp       .go_to_sibling                           ;
 .cmp_num:
   test      word [rsi + PAR_PARFLAGS_OFF], IMM_BIT   ;
   jnz       .continue_traverse                       ;
@@ -837,6 +990,8 @@ traverse_operands:
   jz        .cmp_group                               ;
 .cmp_reg:
   mov       dl, ah                                   ;
+  cmp       al, G_REG64                              ;
+  je        .cmp_reg64                               ;
   cmp       al, G_REG32                              ;
   je        .cmp_reg32                               ;
   cmp       al, G_REG16                              ;
@@ -846,6 +1001,14 @@ traverse_operands:
   cmp       al, G_SREG                               ;
   je        .cmp_sreg                                ;
   jmp       .go_to_sibling                           ;
+.cmp_reg64:
+  or        rbx, REXW_BIT                            ;
+  test      word [rsi + PAR_PARFLAGS_OFF], REG32_BIT ;
+  jz        .go_to_sibling                           ;
+  cmp       dl, byte [rsi]                           ;
+  jne       .go_to_sibling                           ;
+  mov       byte [r13 + 1], R_CONST                  ;
+  jmp       .group_matches                           ;
 .cmp_reg32:
   test      word [rsi + PAR_PARFLAGS_OFF], REG32_BIT ;
   jz        .go_to_sibling                           ;
@@ -875,8 +1038,18 @@ traverse_operands:
   mov       byte [r13 + 1], R_CONST                  ;
   jmp       .group_matches                           ;
 .cmp_group:
-  cmp       al, byte [rsi]                         ;
-  je        .group_matches                         ;
+  cmp       byte [do_gen_64], 1                      ;
+  jne       .not_reg64                               ;
+  test      word [rsi + PAR_NODEFLAGS_OFF], SHORT_OP ; seatch for compatible instructions
+  jnz       .go_to_sibling                           ;
+  cmp       al, G_REG64                              ;
+  jne       .not_reg64                               ;
+  cmp       byte [rsi], G_REG32                      ;
+  je        .group_matches                           ;
+  jmp       .go_to_sibling                           ;
+.not_reg64:
+  cmp       al, byte [rsi]                           ;
+  je        .group_matches                           ;
 .go_to_sibling:
   movzx     rdi, byte [rsi + PAR_SIBOFF_OFF]       ; go to sibling if group don't matches
   test      di, di                                 ;
@@ -901,12 +1074,21 @@ traverse_operands:
 .not_longest:
   cmp       ah, C_BYTE                             ;
   jl        .not_mem                               ;
-  cmp       ah, C_DWORD                            ;
+  cmp       ah, C_QWORD                            ;
   jg        .not_mem                               ;
+  cmp       ah, C_QWORD                            ;
+  jne       .skip_mem                              ;
+  or        rbx, REXW_BIT                          ;
 .skip_mem:
   lea       r13, [r13 + 2]                         ;
   cmp       byte [r13 - 2], G_SPREF                ;
   cmove     r9d, dword [r13 - 1]                   ;
+  cmp       byte [r13 - 2], G_REG64                ;
+  jne       .mem_not_r64                           ;
+  cmp       byte [r13 - 1], R64_RIP                ;
+  jne       .mem_not_r64                           ;
+  or        rbx, RIPREL_BIT                        ;
+.mem_not_r64:
   cmp       byte [r13 - 2], G_CTRL                 ;
   jne       .skip_mem                              ;
   cmp       byte [r13 - 1], C_LF                   ;
@@ -1015,22 +1197,35 @@ traverse_operands:
   jz        .skip_segpref                             ;
   mov       byte [r14], r9b                           ;
   inc       r14                                       ;
-  inc       r15d                                      ;
-  inc       dword [current_ptr]                       ;
+  inc       r15                                       ;
+  inc       qword [current_ptr]                       ;
 .skip_segpref:
+  test      rbx, REXW_BIT + REXSZ_BIT                 ;
+  jz        .skip_rex                                 ;
+  mov       qword [rex_ptr], r14                      ;
+  mov       dl, 0x40                                  ;
+  test      rbx, REXW_BIT                             ;
+  jz        .not_rexw                                 ;
+  mov       dl, 0x48                                  ;
+.not_rexw:
+  mov       byte [r14], dl                            ;
+  inc       r14                                       ;
+  inc       r15                                       ;
+  inc       qword [current_ptr]                       ;
+.skip_rex:
   test      di, OPSIZE                                ; handle prefix opcode flags
   jz        .skip_opsize                              ;
   mov       byte [r14], 0x66                          ;
   inc       r14                                       ;
-  inc       r15d                                      ;
-  inc       dword [current_ptr]                       ;
+  inc       r15                                       ;
+  inc       qword [current_ptr]                       ;
 .skip_opsize:
   test      di, TWOBYTE                               ;
   jz        .skip_twobyte                             ;
   mov       byte [r14], 0x0F                          ;
   inc       r14                                       ;
-  inc       r15d                                      ;
-  inc       dword [current_ptr]                       ;
+  inc       r15                                       ;
+  inc       qword [current_ptr]                       ;
 .skip_twobyte:
   test      di, SHORT_OP                              ; handle node flags for opcodes
   jnz       .short                                    ;
@@ -1038,31 +1233,41 @@ traverse_operands:
   jnz       .modrm                                    ;
   jmp       .skip_flags                               ;
 .short:
+  test      rbx, REXW_BIT + REXSZ_BIT                 ; short opcodes are incompatible with long mode
+  jnz       incomp_instr_err                          ;
   add       al, byte [r12 + 1]                        ; short opcodes always have register as first operand btw
   jmp       .skip_flags                               ;
 .modrm:
-  call      modrm_mode                                ;
-  inc       r14                                       ;
-  mov       qword [modrm_ptr], r14                    ;
-  mov       byte [r14], 11000000b                     ; set reg/reg mode (will be overwrited by memory handlers anyway)
-  dec       r14                                       ;
-  mov       byte [r14], al                            ;
-  lea       r14, [r14 + 2]                            ;
-  add       r15d, 2                                   ;
-  add       dword [current_ptr], 2                    ;
-  movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]        ;
-  and       rbx, PHFIRST_BIT                          ;
-  or        rbx, rsi                                  ;
-  test      di, OPNUM                                 ;
-  jz        .skip_opnum                               ;
-  mov       dx, di                                    ;
-  and       dx, OPNUM                                 ;
-  bsr       dx, dx                                    ;
-  shl       dx, 3                                     ;
-  or        byte [r14 - 1], dl                        ;
+  call      modrm_mode                                           ;
+  inc       r14                                                  ;
+  mov       qword [modrm_ptr], r14                               ;
+  mov       byte [r14], 11000000b                                ; set reg/reg mode (will be overwrited by memory handlers anyway)
+  dec       r14                                                  ;
+  mov       byte [r14], al                                       ;
+  lea       r14, [r14 + 2]                                       ;
+  add       r15, 2                                               ;
+  add       qword [current_ptr], 2                               ;
+  movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]                   ;
+  and       rbx, PHFIRST_BIT + REXW_BIT + REXSZ_BIT + RIPREL_BIT ;
+  or        rbx, rsi                                             ;
+  test      di, OPNUM                                            ;
+  jz        .skip_opnum                                          ;
+  mov       dx, di                                               ;
+  and       dx, OPNUM                                            ;
+  bsr       dx, dx                                               ;
+  shl       dx, 3                                                ;
+  or        byte [r14 - 1], dl                                   ;
 .skip_opnum:
   test      di, SIB                                   ;
   jz        parse_ir                                  ;
+  test      rbx, RIPREL_BIT                           ;
+  jz        .not_riprel                               ;
+  mov       byte [r14 - 1], 00000101b                 ;
+  lea       r14, [r14 + 4]                            ;
+  add       r15, 4                                    ;
+  add       qword [current_ptr], 4                    ;
+  jmp       parse_ir                                  ;
+.not_riprel:
   and       byte [r14 - 1], 00111111b                 ; reset mod
   or        byte [r14 - 1], 00000100b                 ; set SIB mode in ModR/M (disp32 defined in SIB)
   or        rbx, REGFIRST_BIT                         ;
@@ -1071,8 +1276,8 @@ traverse_operands:
   inc       r14                                       ;
   mov       qword [sib_offset_ptr], r14               ;
   lea       r14, [r14 + 4]                            ;
-  add       r15d, 5                                   ;
-  add       dword [current_ptr], 5                    ;
+  add       r15, 5                                    ;
+  add       qword [current_ptr], 5                    ;
   jmp       parse_ir                                  ;
 .skip_flags:
   mov       byte [r14], al                            ;
@@ -1080,8 +1285,8 @@ traverse_operands:
   movzx     rsi, word [rsi + PAR_PARFLAGS_OFF]        ;
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, rsi                                  ;
-  inc       r15d                                      ;
-  inc       dword [current_ptr]                       ;
+  inc       r15                                       ;
+  inc       qword [current_ptr]                       ;
   jmp       parse_ir                                  ; go to operands logic
 
 dir_group:
@@ -1089,6 +1294,8 @@ dir_group:
   jmp       qword [dir_jmp_tbl + rax * 8]             ;
 
 .handle_db:
+  test      rbx, DIR_BIT                                ;
+  jz        invalid_expression_err                      ;
   and       rbx, PHFIRST_BIT                            ; just set bits
   or        rbx, UNLIMSTR_BIT + IMM8_BIT + UNLIMIMM_BIT ; set unlimited lenght to string (quality of life)
   call      operand_mode                                ;
@@ -1096,6 +1303,8 @@ dir_group:
   jmp       parse_ir                                    ;
 
 .handle_dw:
+  test      rbx, DIR_BIT                                ;
+  jz        invalid_expression_err                      ;
   and       rbx, PHFIRST_BIT                            ;
   or        rbx, IMM16_BIT + UNLIMIMM_BIT               ;
   call      operand_mode                                ;
@@ -1103,6 +1312,8 @@ dir_group:
   jmp       parse_ir                                    ;
 
 .handle_dd:
+  test      rbx, DIR_BIT                                ;
+  jz        invalid_expression_err                      ;
   and       rbx, PHFIRST_BIT                            ;
   or        rbx, IMM32_BIT + UNLIMIMM_BIT               ;
   call      operand_mode                                ;
@@ -1110,52 +1321,48 @@ dir_group:
   jmp       parse_ir                                    ;
 
 .handle_text:
-  inc       qword [style_points]                        ;
-  mov       rdi, qword [phdrbuf_ptr]                    ;
-  add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
-  add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
-  mov       edx, dword [phdr_flags]                     ;
-  mov       dword [phdr.flags], edx                     ;
-  inc       word [ehdr.phnum]                           ;
-  add       dword [ehdr.entry], PHENTSIZE               ;
-  mov       byte [phdr_flags], R + X                    ;
-  test      rbx, PHFIRST_BIT                            ;
-  jz        .write_phdr                                 ;
-  add       r15d, EHSIZE + PHENTSIZE                    ;
-  xor       rbx, PHFIRST_BIT                            ;
-  jmp       .skip_write                                 ;
+  mov       rax, R + X                                  ;
+  jmp       .handle_seg                                 ;
 
 .handle_data:
+  mov       rax, R + W                                  ;
+  jmp       .handle_seg                                 ;
+
+.handle_rodata:
+  mov       rax, R                                      ;
+  jmp       .handle_seg                                 ;
+
+.handle_seg:
   inc       qword [style_points]                        ;
   mov       rdi, qword [phdrbuf_ptr]                    ;
-  add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
-  add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
+  cmp       byte [do_gen_64], 1                         ;
+  je        .handle_seg64                               ;
   mov       edx, dword [phdr_flags]                     ;
   mov       dword [phdr.flags], edx                     ;
+  mov       qword [phdr_flags], rax                     ;
+  add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
+  add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
   inc       word [ehdr.phnum]                           ;
   add       dword [ehdr.entry], PHENTSIZE               ;
-  mov       byte [phdr_flags], R + W                    ;
   test      rbx, PHFIRST_BIT                            ;
   jz        .write_phdr                                 ;
-  add       r15d, EHSIZE + PHENTSIZE                    ;
+  add       r15, EHSIZE + PHENTSIZE                     ;
   xor       rbx, PHFIRST_BIT                            ;
   jmp       .skip_write                                 ;
 
-.handle_rodata:
-  inc       qword [style_points]                        ;
-  mov       rdi, qword [phdrbuf_ptr]                    ;
-  add       dword [rdi + phdr.filesz - phdr], PHENTSIZE ;
-  add       dword [rdi + phdr.memsz - phdr], PHENTSIZE  ;
-  mov       edx, dword [phdr_flags]                     ;
-  mov       dword [phdr.flags], edx                     ;
-  inc       word [ehdr.phnum]                           ;
-  add       dword [ehdr.entry], PHENTSIZE               ;
-  mov       byte [phdr_flags], R                        ;
-  test      rbx, PHFIRST_BIT                            ;
-  jz        .write_phdr                                 ;
-  add       r15d, EHSIZE + PHENTSIZE                    ;
-  xor       rbx, PHFIRST_BIT                            ;
-  jmp       .skip_write                                 ;
+.handle_seg64:
+  mov       edx, dword [phdr_flags]                           ;
+  mov       dword [phdr64.flags], edx                         ;
+  mov       qword [phdr_flags], rax                           ;
+  add       qword [rdi + phdr64.filesz - phdr64], PHENTSIZE64 ;
+  add       qword [rdi + phdr64.memsz - phdr64], PHENTSIZE64  ;
+  inc       word [ehdr64.phnum]                               ;
+  add       qword [ehdr64.entry], PHENTSIZE64                 ;
+  test      rbx, PHFIRST_BIT                                  ;
+  jz        .write_phdr64                                     ;
+  add       r15, EHSIZE64 + PHENTSIZE64                       ;
+  xor       rbx, PHFIRST_BIT                                  ;
+  jmp       .skip_write64                                     ;
 
 .handle_entry:
   test      rbx, DIR_BIT                              ;
@@ -1169,7 +1376,32 @@ dir_group:
   cmp       ax, C_NUM                                 ;
   jne       invalid_operands_err                      ;
 .valid_entry:
+  and       rbx, PHFIRST_BIT                          ;
   or        rbx, IMM32_BIT + ENTRY_BIT                ;
+  lea       r12, [r12 + 2]                            ;
+  jmp       parse_ir                                  ;
+
+.handle_org:
+  test      rbx, DIR_BIT                              ;
+  jz        invalid_expression_err                    ;
+  xor       rbx, DIR_BIT                              ;
+  add       qword [style_points], 2                   ; origin is stylish too
+  mov       ax, word [r12 + 2]                        ;
+  xchg      ah, al                                    ;
+  cmp       ax, C_NUM                                 ;
+  jne       invalid_operands_err                      ;
+  xor       rax, rax                                  ;
+  mov       eax, dword [r12 + 4]                      ;
+  mov       qword [current_ptr], rax                  ;
+  and       rbx, PHFIRST_BIT                          ;
+  lea       r12, [r12 + 8]                            ;
+  jmp       parse_ir                                  ;
+
+.handle_dq:
+  test      rbx, DIR_BIT                              ;
+  jz        invalid_expression_err                    ;
+  and       rbx, PHFIRST_BIT                          ;
+  or        rbx, IMM64_BIT + UNLIMIMM_BIT             ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
@@ -1195,18 +1427,11 @@ dir_group:
 .first_segment:
   mov       dword [phdr.filesz], r15d                 ;
   mov       dword [phdr.memsz], r15d                  ;
-  mov       rcx, qword [phdrbuf_ptr]                  ;
-  add       rcx, PHENTSIZE                            ;
-  cmp       rbp, rcx                                  ;
-  mov       rdx, qword [phdr]                         ; write phdr to phdr buffer
-  mov       qword [rbp], rdx                          ;
-  mov       rdx, qword [phdr + 8]                     ;
-  mov       qword [rbp + 8], rdx                      ;
-  mov       rdx, qword [phdr + 16]                    ;
-  mov       qword [rbp + 16], rdx                     ;
-  mov       rdx, qword [phdr + 24]                    ;
-  mov       qword [rbp + 24], rdx                     ;
-  lea       rbp, [rbp + 32]                           ;
+  mov       rcx, PHENTSIZE                            ;
+  mov       rsi, phdr                                 ;
+  mov       rdi, rbp                                  ;
+  rep       movsb                                     ;
+  mov       rbp, rdi                                  ;
   xor       r15, r15                                  ;
 .skip_write:
   mov       edx, dword [phdr.offset]                  ; set phdr fields
@@ -1222,6 +1447,48 @@ dir_group:
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
+.write_phdr64:
+  cmp       rbp, r11                                  ;
+  jl        .skip_expand64                            ;
+  sub       r11, qword [phdrbuf_ptr]                  ;
+  push      r11                                       ; expand phdr buffer if it needs more space
+  push      r11                                       ;
+  SYSCALL_1 SYS_BRK, 0                                ;
+  pop       r11                                       ;
+  lea       rdx, [rax + r11]                          ;
+  SYSCALL_1 SYS_BRK, rdx                              ;
+  pop       r11                                       ;
+  lea       r11, [r11 * 2]                            ;
+  add       r11, qword [phdrbuf_ptr]                  ;
+.skip_expand64:
+  mov       rdx, qword [phdr64.filesz]                ;
+  add       qword [phdr64.offset], rdx                ;
+  cmp       qword [phdrbuf_ptr], rbp                  ;
+  je        .first_segment64                          ;
+  sub       r15, PHENTSIZE64                          ;
+.first_segment64:
+  mov       qword [phdr64.filesz], r15                ;
+  mov       qword [phdr64.memsz], r15                 ;
+  mov       rcx, PHENTSIZE64                          ;
+  mov       rsi, phdr64                               ;
+  mov       rdi, rbp                                  ;
+  rep       movsb                                     ;
+  mov       rbp, rdi                                  ;
+  xor       r15, r15                                  ;
+.skip_write64:
+  mov       rdx, qword [phdr64.offset]                ;
+  add       rdx, qword [ehdr64.entry]                 ;
+  movzx     rdi, word [ehdr64.phnum]                  ;
+  imul      rdi, rdi, PHENTSIZE64                     ;
+  sub       rdx, rdi                                  ;
+  sub       rdx, EHSIZE64                             ;
+  add       rdx, qword [phdr64.filesz]                ;
+  mov       qword [phdr64.vaddr], rdx                 ;
+  mov       qword [phdr64.paddr], rdx                 ;
+  add       r15, PHENTSIZE64                          ;
+  lea       r12, [r12 + 2]                            ;
+  jmp       parse_ir                                  ;
+
 pref_group:
   test      rbx, INSTR_BIT                            ;
   jz        invalid_expression_err                    ;
@@ -1229,13 +1496,19 @@ pref_group:
   mov       al, byte [r12 + 1]                        ;
   mov       byte [r14], al                            ;
   inc       r14                                       ;
-  inc       r15d                                      ;
-  add       dword [current_ptr], 1                    ;
+  inc       r15                                       ;
+  add       qword [current_ptr], 1                    ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
 modrm_mode:
-  mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_mod_reg     ; modrm mode for ModR/M bytes
+  mov       qword [group_jmp_tbl + G_REG64 * 8], invalid_operands_err          ; modrm mode for ModR/M bytes
+  mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_mod_reg     ;
+  test      rbx, REXW_BIT                                                      ;
+  jz        .not_rexw                                                          ;
+  mov       qword [group_jmp_tbl + G_REG64 * 8], ctrl_group.handle_mod_reg     ;
+  mov       qword [group_jmp_tbl + G_REG32 * 8], invalid_operands_err          ;
+.not_rexw:
   mov       qword [group_jmp_tbl + G_REG16 * 8], ctrl_group.handle_mod_reg     ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], ctrl_group.handle_mod_reg      ;
   mov       qword [group_jmp_tbl + G_SREG * 8], ctrl_group.handle_mod_reg      ;
@@ -1247,7 +1520,13 @@ modrm_mode:
 sib_mode:
   mov       qword [ctrl_jmp_tbl + C_MEMST * 8], ctrl_group.handle_memstart     ; sib mode for SIB bytes
   mov       qword [ctrl_jmp_tbl + C_MEMEN * 8], ctrl_group.handle_memend       ;
+  mov       qword [group_jmp_tbl + G_REG64 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_REG32 * 8], ctrl_group.handle_sib_reg     ;
+  cmp       byte [do_gen_64], 1                                                ;
+  jne       .not_rexw                                                          ;
+  mov       qword [group_jmp_tbl + G_REG64 * 8], ctrl_group.handle_sib_reg     ;
+  mov       qword [group_jmp_tbl + G_REG32 * 8], invalid_expression_err        ;
+.not_rexw:
   mov       qword [group_jmp_tbl + G_REG16 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], invalid_expression_err         ;
   mov       qword [group_jmp_tbl + G_SREG * 8], invalid_expression_err         ;
@@ -1265,7 +1544,13 @@ sib_mode:
   ret                                                                          ;
 
 operand_mode:
+  mov       qword [group_jmp_tbl + G_REG64 * 8], invalid_operands_err          ;
   mov       qword [group_jmp_tbl + G_REG32 * 8], skip_ir                       ;
+  test      rbx, REXW_BIT                                                      ;
+  jz        .not_rexw                                                          ;
+  mov       qword [group_jmp_tbl + G_REG64 * 8], skip_ir                       ;
+  mov       qword [group_jmp_tbl + G_REG32 * 8], invalid_operands_err          ;
+.not_rexw:
   mov       qword [group_jmp_tbl + G_REG16 * 8], skip_ir                       ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], skip_ir                        ;
   mov       qword [group_jmp_tbl + G_SREG * 8], skip_ir                        ;
@@ -1280,6 +1565,7 @@ normal_mode:
   mov       qword [group_jmp_tbl + G_REG32 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_REG16 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_REG8 * 8], invalid_expression_err         ;
+  mov       qword [group_jmp_tbl + G_REG64 * 8], invalid_expression_err        ;
   mov       qword [group_jmp_tbl + G_SREG * 8], invalid_expression_err         ;
   mov       qword [group_jmp_tbl + G_CREG * 8], invalid_expression_err         ;
   mov       qword [group_jmp_tbl + G_DREG * 8], invalid_expression_err         ;
