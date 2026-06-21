@@ -353,6 +353,11 @@ I_CWDE   = 98
 I_CDQ    = 99
 I_CQO    = 100
 I_CDQE   = 101
+I_MOVSQ  = 102
+I_CMPSQ  = 103
+I_STOSQ  = 104
+I_LODSQ  = 105
+I_SCASQ  = 106
 
 ; extended instructions (0x0F prefix in opcode)
 E_JE       = 0
