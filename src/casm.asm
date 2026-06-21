@@ -201,6 +201,10 @@ undef_lbl_err:
   mov       rsi, e_undef_lbl_msg
   jmp       err_exit_line
 
+defined_lbl_err:
+  mov       rsi, e_defined_lbl_msg
+  jmp       err_exit_line
+
 rel_jmp_range_err:
   mov       rsi, e_reljmp_range_msg
   jmp       err_exit_line
@@ -272,6 +276,7 @@ e_invalid_name_msg db ESC, '[31m', "[Error]: Invalid label name",               
 e_invalid_expr_msg db ESC, '[31m', "[Error]: Invalid expression",                         ESC, '[0m', LF, NUL
 e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match",                  ESC, '[0m', LF, NUL
 e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label",                            ESC, '[0m', LF, NUL
+e_defined_lbl_msg  db ESC, '[31m', "[Error]: Label is already defined",                   ESC, '[0m', LF, NUL
 e_reljmp_range_msg db ESC, '[31m', "[Error]: Relative jump out of range",                 ESC, '[0m', LF, NUL
 e_invalid_opds_msg db ESC, '[31m', "[Error]: Invalid operands",                           ESC, '[0m', LF, NUL
 e_trail_chars_msg  db ESC, '[31m', "[Error]: Trailing characters",                        ESC, '[0m', LF, NUL
