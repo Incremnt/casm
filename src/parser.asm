@@ -410,6 +410,8 @@ ctrl_group:
   test      rbx, REGFIRST_BIT                      ;
   jnz       .not_empty_rm                          ;
   or        rbx, REGFIRST_BIT                      ;
+  cmp       byte [r12 + 1], R64_RIP                ;
+  je        invalid_operands_err                   ;
   cmp       byte [r12 + 1], R_CONST                ;
   je        skip_ir                                ;
   cmp       byte [r12 + 1], REG_R8                 ;
