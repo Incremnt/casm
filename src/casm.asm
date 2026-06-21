@@ -69,7 +69,6 @@ parse_flags:
   test      rdx, rdx                                                       ;
   jnz       usage_err                                                      ;
   mov       byte [do_gen_elf], 0                                           ;
-  mov       dword [current_ptr], 0                                         ;
   cmp       rcx, qword [rsp]                                               ;
   je        .end_flags_parse                                               ;
   inc       rcx                                                            ;
@@ -303,7 +302,7 @@ e_rank_msg_en      db LF
 E_RANK_MSG_EN_SZ      = $ - e_rank_msg_en
 
 e_help_msg         db "casm [OPTIONS] <SOURCE> <OUTPUT>", LF
-                   db "  -n, --noelf    don't generate ELF header, ignore PHDR directives", LF
+                   db "  -n, --noelf    don't generate ELF header, error on PHDR directives", LF
                    db "  -a, --amd64    generate 64-bit code", LF
                    db "  -b, --bytes    show output file size in bytes", LF
                    db "  -s, --style    show your rank and style points percentage", LF
