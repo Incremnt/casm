@@ -1416,8 +1416,10 @@ dir_group:
   add       qword [rdi + phdr64.memsz - phdr64], PHENTSIZE64  ;
   inc       word [ehdr64.phnum]                               ;
   add       qword [ehdr64.entry], PHENTSIZE64                 ;
+  add       qword [current_ptr], 0x1000                       ;
   test      rbx, PHFIRST_BIT                                  ;
   jz        .write_phdr64                                     ;
+  sub       qword [current_ptr], 0x1000                       ;
   add       r15, EHSIZE64 + PHENTSIZE64                       ;
   xor       rbx, PHFIRST_BIT                                  ;
   jmp       .skip_write64                                     ;
@@ -1460,6 +1462,7 @@ dir_group:
   jz        invalid_expression_err                    ;
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, IMM64_BIT + UNLIMIMM_BIT             ;
+  call      operand_mode                              ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
@@ -1541,6 +1544,10 @@ dir_group:
   sub       rdx, rdi                                  ;
   sub       rdx, EHSIZE64                             ;
   add       rdx, qword [phdr64.filesz]                ;
+  movzx     rax, word [ehdr64.phnum]                  ;
+  dec       rax                                       ;
+  imul      rax, rax, 0x1000                          ;
+  add       rdx, rax                                  ;
   mov       qword [phdr64.vaddr], rdx                 ;
   mov       qword [phdr64.paddr], rdx                 ;
   add       r15, PHENTSIZE64                          ;
