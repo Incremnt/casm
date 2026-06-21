@@ -23,6 +23,10 @@
 
 parser:
   mov       qword [current_line], 1                            ;
+  cmp       byte [do_gen_elf], 1                               ;
+  je        .not_noelf                                         ;
+  call      noelf_mode                                         ;
+.not_noelf:
   mov       rbx, INSTR_BIT + DIR_BIT + LABEL_BIT + PHFIRST_BIT ; rbx - parser bit mask (expected tokens and other)
   mov       r12, qword [lex_irbuf_ptr]                         ; r12 - token buffer pointer
   xor       r15, r15                                           ; r15 - offset in elf headers
@@ -1646,6 +1650,13 @@ normal_mode:
   mov       qword [ctrl_jmp_tbl + C_PLUS * 8], invalid_expression_err          ;
   mov       qword [ctrl_jmp_tbl + C_MINUS * 8], invalid_expression_err         ;
   mov       qword [ctrl_jmp_tbl + C_MULT * 8], invalid_expression_err          ;
+  ret                                                                          ;
+
+noelf_mode:
+  mov       qword [dir_jmp_tbl + D_TEXT * 8], unk_tkn_err                      ;
+  mov       qword [dir_jmp_tbl + D_DATA * 8], unk_tkn_err                      ;
+  mov       qword [dir_jmp_tbl + D_RODATA * 8], unk_tkn_err                    ;
+  mov       qword [current_ptr], 0                                             ;
   ret                                                                          ;
 
 parser_end = $
