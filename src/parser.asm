@@ -725,8 +725,6 @@ ctrl_group:
   jz        .not_entry                             ;
   xor       rdi, rdi                               ;
   mov       edi, dword [r13 + 1]                   ;
-  cmp       byte [do_gen_64], 1                    ;
-  cmove     rdi, qword [r13 + 1]                   ;
   mov       qword [custom_entry], rdi              ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
