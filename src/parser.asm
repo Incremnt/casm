@@ -1085,12 +1085,20 @@ traverse_operands:
   cmove     r9d, dword [r13 - 1]                   ;
   cmp       byte [r13 - 2], G_REG64                ;
   jne       .mem_not_r64                           ;
+  cmp       byte [r13 - 1], REG_R8                 ;
+  jl        .not_rexmem                            ;
+  or        rbx, REXSZ_BIT                         ;
+.not_rexmem:
   cmp       byte [r13 - 1], R64_RIP                ;
   jne       .mem_not_r64                           ;
   or        rbx, RIPREL_BIT                        ;
 .mem_not_r64:
   cmp       byte [r13 - 2], G_REG32                ;
   jne       .mem_not_r32                           ;
+  cmp       byte [r13 - 1], REG_R8                 ;
+  jl        .not_rexmem32                          ;
+  or        rbx, REXSZ_BIT                         ;
+.not_rexmem32:
   cmp       byte [do_gen_64], 1                    ;
   jne       .mem_not_r32                           ;
   or        rbx, ADSIZE_BIT                        ;
@@ -1213,6 +1221,13 @@ traverse_operands:
   inc       r15                                       ;
   inc       qword [current_ptr]                       ;
 .not_adsize:
+  test      di, OPSIZE                                ;
+  jz        .skip_opsize                              ;
+  mov       byte [r14], 0x66                          ;
+  inc       r14                                       ;
+  inc       r15                                       ;
+  inc       qword [current_ptr]                       ;
+.skip_opsize:
   test      di, REXW                                  ;
   jz        .not_node_rexw                            ;
   or        rbx, REXW_BIT                             ;
@@ -1230,13 +1245,6 @@ traverse_operands:
   inc       r15                                       ;
   inc       qword [current_ptr]                       ;
 .skip_rex:
-  test      di, OPSIZE                                ;
-  jz        .skip_opsize                              ;
-  mov       byte [r14], 0x66                          ;
-  inc       r14                                       ;
-  inc       r15                                       ;
-  inc       qword [current_ptr]                       ;
-.skip_opsize:
   test      di, TWOBYTE                               ;
   jz        .skip_twobyte                             ;
   mov       byte [r14], 0x0F                          ;
