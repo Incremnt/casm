@@ -71,6 +71,7 @@ lexer:
   mov       word [rbx + 'g' * 2], lex_trie.g_node - lex_trie         ;
   mov       word [rbx + 'v' * 2], lex_trie.v_node - lex_trie         ;
   mov       word [rbx + 'h' * 2], lex_trie.h_node - lex_trie         ;
+  mov       word [rbx + 'q' * 2], lex_trie.q_node - lex_trie         ;
   mov       word [rbx + '.' * 2], lex_trie.sec_node - lex_trie       ;
 
   mov       rcx, valid_char_tbl          ; init valid characters table
@@ -167,8 +168,18 @@ write_ir:
   jz        .not_segment                      ;
   cmp       byte [do_gen_elf], 0              ;
   je        .not_segment                      ;
-  add       dword [current_ptr], PHENTSIZE    ;
+  cmp       byte [do_gen_64], 1               ;
+  je        .seg64                            ;
+  add       qword [current_ptr], PHENTSIZE    ;
+  jmp       .not_segment                      ;
+.seg64:
+  add       qword [current_ptr], PHENTSIZE64  ;
 .not_segment:
+  test      byte [r15 + LEX_FLAGS_OFF], AMD64 ;
+  jz        .not_64bit                        ;
+  cmp       byte [do_gen_64], 0               ;
+  je        unk_tkn_err                       ;
+.not_64bit:
   mov       si, word [r15 + LEX_IR_OFF]       ; write IR to the IR buffer
   mov       word [r14], si                    ;
   lea       r14, [r14 + 2]                    ;
