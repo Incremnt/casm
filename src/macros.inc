@@ -76,12 +76,14 @@ EXIT_FAILURE = 1
 
 ; elf stuff
 EI_CLASS32  = 1
+EI_CLASS64  = 2
 EI_DATA2LSB = 1
 EV_CURRENT  = 1
 EI_OSABI    = 0
 EI_VERCURR  = 0
 ET_EXEC     = 2
 EM_386      = 3
+EM_X86_64   = 62
 EV_CURRENT  = 1
 PT_LOAD     = 1
 
@@ -104,6 +106,7 @@ VALID    = 1
 ; lexer trie bits
 TERM     = 0x01
 PHDR     = 0x02
+AMD64    = 0x04
 
 ; parser trie bits
 TERM     = 0x0001
@@ -112,7 +115,8 @@ SIB      = 0x0004
 SHORT_OP = 0x0008
 TWOBYTE  = 0x0010
 OPSIZE   = 0x0020
-SREG     = 0x0040
+REXW     = 0x0040
+SREG     = 0x0080
 OPNUM1   = 0x0100
 OPNUM2   = 0x0200
 OPNUM3   = 0x0400
@@ -194,6 +198,10 @@ PLUS_BIT      = 0x400000
 MINUS_BIT     = 0x800000
 MULT_BIT      = 0x01000000
 UNLIMIMM_BIT  = 0x02000000
+IMM64_BIT     = 0x04000000
+REXW_BIT      = 0x08000000
+REXSZ_BIT     = 0x10000000
+RIPREL_BIT    = 0x20000000
 IMM_BIT       = IMM8_BIT + IMM16_BIT + IMM32_BIT
 MEM_BIT       = MEM8_BIT + MEM16_BIT + MEM32_BIT
 REG_BIT       = REG8_BIT + REG16_BIT + REG32_BIT
@@ -211,6 +219,7 @@ G_SPREF = 8
 G_SREG  = 9
 G_CREG  = 10
 G_DREG  = 11
+G_REG64 = 12
 
 ; control IRs
 C_EOF   = 0
@@ -228,6 +237,7 @@ C_LF    = 11
 C_BYTE  = 12
 C_WORD  = 13
 C_DWORD = 14
+C_QWORD = 15
 
 ; directives
 D_DB     = 0
@@ -237,6 +247,8 @@ D_TEXT   = 3
 D_DATA   = 4
 D_RODATA = 5
 D_ENTRY  = 6
+D_ORG    = 7
+D_DQ     = 8
 
 ; instructions
 I_MOV    = 0
@@ -339,6 +351,8 @@ I_CLD    = 96
 I_STD    = 97
 I_CWDE   = 98
 I_CDQ    = 99
+I_CQO    = 100
+I_CDQE   = 101
 
 ; extended instructions (0x0F prefix in opcode)
 E_JE       = 0
@@ -437,36 +451,62 @@ E_LGDT     = 92
 E_LIDT     = 93
 E_SMSW     = 94
 E_LMSW     = 95
+E_SYSCALL  = 96
+E_SYSRET   = 97
 
 ; 32-bit registers
-R32_EAX = 0
-R32_ECX = 1
-R32_EDX = 2
-R32_EBX = 3
-R32_ESP = 4
-R32_EBP = 5
-R32_ESI = 6
-R32_EDI = 7
+R32_EAX  = 0
+R32_ECX  = 1
+R32_EDX  = 2
+R32_EBX  = 3
+R32_ESP  = 4
+R32_EBP  = 5
+R32_ESI  = 6
+R32_EDI  = 7
+R32_R8D  = 16
+R32_R9D  = 17
+R32_R10D = 18
+R32_R11D = 19
+R32_R12D = 20
+R32_R13D = 21
+R32_R14D = 22
+R32_R15D = 23
 
 ; 16-bit registers
-R16_AX  = 0
-R16_CX  = 1
-R16_DX  = 2
-R16_BX  = 3
-R16_SP  = 4
-R16_BP  = 5
-R16_SI  = 6
-R16_DI  = 7
+R16_AX   = 0
+R16_CX   = 1
+R16_DX   = 2
+R16_BX   = 3
+R16_SP   = 4
+R16_BP   = 5
+R16_SI   = 6
+R16_DI   = 7
+R16_R8W  = 16
+R16_R9W  = 17
+R16_R10W = 18
+R16_R11W = 19
+R16_R12W = 20
+R16_R13W = 21
+R16_R14W = 22
+R16_R15W = 23
 
 ; 8-bit registers
-R8_AL = 0
-R8_CL = 1
-R8_DL = 2
-R8_BL = 3
-R8_AH = 4
-R8_CH = 5
-R8_DH = 6
-R8_BH = 7
+R8_AL   = 0
+R8_CL   = 1
+R8_DL   = 2
+R8_BL   = 3
+R8_AH   = 4
+R8_CH   = 5
+R8_DH   = 6
+R8_BH   = 7
+R8_R8B  = 16
+R8_R9B  = 17
+R8_R10B = 18
+R8_R11B = 19
+R8_R12B = 20
+R8_R13B = 21
+R8_R14B = 22
+R8_R15B = 23
 
 ; prefixes (already contain opcode prefix)
 P_REPE  = 0xF3
@@ -509,5 +549,25 @@ SP_DS = 0x3E
 SP_FS = 0x64
 SP_GS = 0x65
 
-; constant register (for opcode short forms)
+; 64-bit registers
+R64_RAX = 0
+R64_RCX = 1
+R64_RDX = 2
+R64_RBX = 3
+R64_RSP = 4
+R64_RBP = 5
+R64_RSI = 6
+R64_RDI = 7
+R64_RIP = 8
+R64_R8  = 16
+R64_R9  = 17
+R64_R10 = 18
+R64_R11 = 19
+R64_R12 = 20
+R64_R13 = 21
+R64_R14 = 22
+R64_R15 = 23
+
+; neutral group registers (for opcode short forms & parser)
+REG_R8  = 16
 R_CONST = 0xFF
