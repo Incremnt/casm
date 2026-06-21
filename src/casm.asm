@@ -597,6 +597,11 @@ instr_node_tbl:
   dq par_trie.cdq_node
   dq par_trie.cqo_node
   dq par_trie.cdqe_node
+  dq par_trie.movsq_node
+  dq par_trie.cmpsq_node
+  dq par_trie.stosq_node
+  dq par_trie.lodsq_node
+  dq par_trie.scasq_node
 
 einst_node_tbl:
   dq par_trie.je_node
@@ -751,7 +756,7 @@ lex_trie:
 
 .m_node:
   LEX_NODE 'm', 0, 0, 1, 0, 0
-    LEX_NODE 'o', 0, 0, 1, 9, 0
+    LEX_NODE 'o', 0, 0, 1, 10, 0
       LEX_NODE 'v', G_INSTR, I_MOV, 1, 0, TERM
         LEX_NODE 'z', 0, 0, 1, 2, 0
           LEX_NODE 'x', G_EINST, E_MOVZX, 0, 0, TERM
@@ -759,7 +764,8 @@ lex_trie:
           LEX_NODE 'x', G_EINST, E_MOVSX, 0, 1, TERM
           LEX_NODE 'b', G_INSTR, I_MOVSB, 0, 1, TERM
           LEX_NODE 'w', G_INSTR, I_MOVSW, 0, 1, TERM
-          LEX_NODE 'd', G_INSTR, I_MOVSD, 0, 0, TERM
+          LEX_NODE 'd', G_INSTR, I_MOVSD, 0, 1, TERM
+          LEX_NODE 'q', G_INSTR, I_MOVSQ, 0, 0, AMD64 + TERM
     LEX_NODE 'u', 0, 0, 1, 0, 0
       LEX_NODE 'l', G_INSTR, I_MUL, 0, 0, TERM
 
@@ -790,13 +796,14 @@ lex_trie:
       LEX_NODE 'i', G_INSTR, I_CLI, 0, 1, TERM
       LEX_NODE 't', 0, 0, 1, 0, 0
         LEX_NODE 's', G_EINST, E_CLTS, 0, 0, TERM
-    LEX_NODE 'm', 0, 0, 1, 37, 0
+    LEX_NODE 'm', 0, 0, 1, 38, 0
       LEX_NODE 'c', G_INSTR, I_CMC, 0, 1, TERM
-      LEX_NODE 'p', G_INSTR, I_CMP, 1, 9, TERM
-        LEX_NODE 's', 0, 0, 1, 4, 0
+      LEX_NODE 'p', G_INSTR, I_CMP, 1, 10, TERM
+        LEX_NODE 's', 0, 0, 1, 5, 0
           LEX_NODE 'b', G_INSTR, I_CMPSB, 0, 1, TERM
           LEX_NODE 'w', G_INSTR, I_CMPSW, 0, 1, TERM
-          LEX_NODE 'd', G_INSTR, I_CMPSD, 0, 0, TERM
+          LEX_NODE 'd', G_INSTR, I_CMPSD, 0, 1, TERM
+          LEX_NODE 'q', G_INSTR, I_CMPSQ, 0, 0, AMD64 + TERM
         LEX_NODE 'x', 0, 0, 1, 0, 0
           LEX_NODE 'c', 0, 0, 1, 0, 0
             LEX_NODE 'h', 0, 0, 1, 0, 0
@@ -1060,7 +1067,7 @@ lex_trie:
       LEX_NODE 'r', G_INSTR, I_SAR, 0, 1, TERM
       LEX_NODE 'h', 0, 0, 1, 0, 0
         LEX_NODE 'f', G_INSTR, I_SAHF, 0, 0, TERM
-    LEX_NODE 't', 0, 0, 1, 10, 0
+    LEX_NODE 't', 0, 0, 1, 11, 0
       LEX_NODE 'c', G_INSTR, I_STC, 0, 1, TERM
       LEX_NODE 'i', G_INSTR, I_STI, 0, 1, TERM
       LEX_NODE 'd', G_INSTR, I_STD, 0, 1, TERM
@@ -1069,13 +1076,15 @@ lex_trie:
         LEX_NODE 's', 0, 0, 1, 0, 0
           LEX_NODE 'b', G_INSTR, I_STOSB, 0, 1, TERM
           LEX_NODE 'w', G_INSTR, I_STOSW, 0, 1, TERM
-          LEX_NODE 'd', G_INSTR, I_STOSD, 0, 0, TERM
-    LEX_NODE 'c', 0, 0, 1, 6, 0
+          LEX_NODE 'd', G_INSTR, I_STOSD, 0, 1, TERM
+          LEX_NODE 'q', G_INSTR, I_STOSQ, 0, 0, AMD64 + TERM
+    LEX_NODE 'c', 0, 0, 1, 7, 0
       LEX_NODE 'a', 0, 0, 1, 0, 0
         LEX_NODE 's', 0, 0, 1, 0, 0
           LEX_NODE 'b', G_INSTR, I_SCASB, 0, 1, TERM
           LEX_NODE 'w', G_INSTR, I_SCASW, 0, 1, TERM
-          LEX_NODE 'd', G_INSTR, I_SCASD, 0, 0, TERM
+          LEX_NODE 'd', G_INSTR, I_SCASD, 0, 1, TERM
+          LEX_NODE 'q', G_INSTR, I_SCASQ, 0, 0, AMD64 + TERM
     LEX_NODE 'l', 0, 0, 1, 3, 0
       LEX_NODE 'd', 0, 0, 1, 0, 0
         LEX_NODE 't', G_EINST, E_SLDT, 0, 0, TERM
@@ -1140,14 +1149,15 @@ lex_trie:
       LEX_NODE 'r', G_EINST, E_LAR, 0, 1, TERM
       LEX_NODE 'h', 0, 0, 1, 0, 0
         LEX_NODE 'f', G_INSTR, I_LAHF, 0, 0, TERM
-    LEX_NODE 'o', 0, 0, 1, 15, 0
+    LEX_NODE 'o', 0, 0, 1, 16, 0
       LEX_NODE 'c', 0, 0, 1, 2, 0
         LEX_NODE 'k', G_PREF, P_LOCK, 0, 0, TERM
-      LEX_NODE 'd', 0, 0, 1, 5, 0
+      LEX_NODE 'd', 0, 0, 1, 6, 0
         LEX_NODE 's', 0, 0, 1, 0, 0
           LEX_NODE 'b', G_INSTR, I_LODSB, 0, 1, TERM
           LEX_NODE 'w', G_INSTR, I_LODSW, 0, 1, TERM
-          LEX_NODE 'd', G_INSTR, I_LODSD, 0, 0, TERM
+          LEX_NODE 'd', G_INSTR, I_LODSD, 0, 1, TERM
+          LEX_NODE 'q', G_INSTR, I_LODSQ, 0, 0, AMD64 + TERM
       LEX_NODE 'o', 0, 0, 1, 0, 0
         LEX_NODE 'p', G_INSTR, I_LOOP, 1, 0, TERM
           LEX_NODE 'z', G_INSTR, I_LOOPZ, 0, 1, TERM
@@ -2179,6 +2189,21 @@ par_trie:
 
 .cdqe_node:
   PAR_NODE G_CTRL, 0x98, 0, 0, NOP_BIT, REXW + TERM
+
+.movsq_node:
+  PAR_NODE G_CTRL, 0xA5, 0, 0, NOP_BIT, REXW + TERM
+
+.cmpsq_node:
+  PAR_NODE G_CTRL, 0xA7, 0, 0, NOP_BIT, REXW + TERM
+
+.stosq_node:
+  PAR_NODE G_CTRL, 0xAB, 0, 0, NOP_BIT, REXW + TERM
+
+.lodsq_node:
+  PAR_NODE G_CTRL, 0xAD, 0, 0, NOP_BIT, REXW + TERM
+
+.scasq_node:
+  PAR_NODE G_CTRL, 0xAF, 0, 0, NOP_BIT, REXW + TERM
 
 ; extended instructions
 .je_node:
