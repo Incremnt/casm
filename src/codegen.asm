@@ -47,10 +47,16 @@ dont_gen_elf:
   mov       rcx, BYTES_BUF_SZ - 1                                ;
   cmp       byte [do_gen_elf], 0                                 ;
   je        .convert_file_size                                   ;
-  xor       rdx, rdx                                             ;
-  mov       dx, word [ehdr.phnum]                                ;
+  cmp       byte [do_gen_64], 1                                  ;
+  je        .not_i386                                            ;
+  movzx     rdx, word [ehdr.phnum]                               ;
   imul      rdx, rdx, PHENTSIZE                                  ;
   lea       rax, [rdx + rax + EHSIZE]                            ;
+  jmp       .convert_file_size                                   ;
+.not_i386:
+  movzx     rdx, word [ehdr64.phnum]                             ;
+  imul      rdx, rdx, PHENTSIZE64                                ;
+  lea       rax, [rdx + rax + EHSIZE64]                          ;
 .convert_file_size:
   xor       rdx, rdx                                             ;
   mov       rbp, 10                                              ;
