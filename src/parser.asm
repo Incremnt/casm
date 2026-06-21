@@ -1200,6 +1200,10 @@ traverse_operands:
   inc       r15                                       ;
   inc       qword [current_ptr]                       ;
 .skip_segpref:
+  test      di, REXW                                  ;
+  jz        .not_node_rexw                            ;
+  or        rbx, REXW_BIT                             ;
+.not_node_rexw:
   test      rbx, REXW_BIT + REXSZ_BIT                 ;
   jz        .skip_rex                                 ;
   mov       qword [rex_ptr], r14                      ;
