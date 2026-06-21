@@ -24,7 +24,14 @@ codegen:
   mov       rbx, qword [output_fd]                               ;
   cmp       byte [do_gen_elf], 0                                 ; don't generate headers if there was --noelf flag
   je        dont_gen_elf                                         ;
-  SYSCALL_3 SYS_WRITE, rbx, ehdr, EHSIZE                         ; write elf header to the output file
+  mov       rcx, EHSIZE                                          ;
+  mov       rsi, ehdr                                            ;
+  cmp       byte [do_gen_64], 1                                  ;
+  jne       .not_amd64                                           ;
+  mov       rcx, EHSIZE64                                        ;
+  mov       rsi, ehdr64                                          ;
+.not_amd64:
+  SYSCALL_3 SYS_WRITE, rbx, rsi, rcx                             ; write elf header to the output file
 
   mov       rcx, rbp                                             ; write program headers
   sub       rcx, qword [phdrbuf_ptr]                             ;
