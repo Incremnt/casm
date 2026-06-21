@@ -12,7 +12,7 @@ To build the CASM, you need **FASM** ([build from the source](https://github.com
 At the moment, CASM supports only GNU/Linux x86/x86-64, you need a x86-64 machine to build CASM.
   ```bash
   casm [OPTIONS] <SOURCE> <OUTPUT>
-    -n, --noelf    don't generate ELF header, ignore PHDR directives
+    -n, --noelf    don't generate ELF header, error on PHDR directives
     -a, --amd64    generate 64-bit code
     -b, --bytes    show output file size in bytes
     -s, --style    show your rank and style points percentage
