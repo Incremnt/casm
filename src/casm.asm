@@ -41,6 +41,8 @@ parse_flags:
   mov       rax, qword [rax]                                               ;
   cmp       rax, qword [noelf_flag]                                        ;
   je        .noelf_flag                                                    ;
+  cmp       rax, qword [amd64_flag]                                        ;
+  je        .amd64_flag                                                    ;
   cmp       rax, qword [bytes_flag]                                        ;
   je        .bytes_flag                                                    ;
   cmp       rax, qword [style_flag]                                        ;
@@ -48,6 +50,8 @@ parse_flags:
   and       eax, 0x00FFFFFF                                                ;
   cmp       eax, dword [noelf_sflag]                                       ;
   je        .noelf_flag                                                    ;
+  cmp       eax, dword [amd64_sflag]                                       ;
+  je        .amd64_flag                                                    ;
   cmp       eax, dword [bytes_sflag]                                       ;
   je        .bytes_flag                                                    ;
   cmp       eax, dword [style_sflag]                                       ;
@@ -65,7 +69,17 @@ parse_flags:
   test      rdx, rdx                                                       ;
   jnz       usage_err                                                      ;
   mov       byte [do_gen_elf], 0                                           ;
-  sub       dword [current_ptr], EHSIZE                                    ;
+  mov       dword [current_ptr], 0                                         ;
+  cmp       rcx, qword [rsp]                                               ;
+  je        .end_flags_parse                                               ;
+  inc       rcx                                                            ;
+  jmp       parse_flags                                                    ;
+.amd64_flag:
+  test      rdx, rdx                                                       ;
+  jnz       usage_err                                                      ;
+  mov       byte [do_gen_64], 1                                            ;
+  mov       rax, qword [ehdr64.entry]                                      ;
+  mov       qword [current_ptr], rax                                       ;
   cmp       rcx, qword [rsp]                                               ;
   je        .end_flags_parse                                               ;
   inc       rcx                                                            ;
@@ -199,6 +213,10 @@ trailing_chars_err:
   mov       rsi, e_trail_chars_msg
   jmp       err_exit_line
 
+incomp_instr_err:
+  mov       rsi, e_incomp_instr_msg
+  jmp       err_exit_line
+
 err_exit:
   xor       rcx, rcx
   push      rsi
@@ -243,20 +261,21 @@ err_exit_line:
 segment readable writable
 
 ; error messages
-e_open_msg         db ESC, '[31m', "[Error]: Can't open file",                ESC, '[0m', LF, NUL
-e_lseek_msg        db ESC, '[31m', "[Error]: SYS_LSEEK failed",               ESC, '[0m', LF, NUL
-e_brk_msg          db ESC, '[31m', "[Error]: Can't allocate memory",          ESC, '[0m', LF, NUL
-e_read_msg         db ESC, '[31m', "[Error]: SYS_READ failed",                ESC, '[0m', LF, NUL
-e_unktkn_msg       db ESC, '[31m', "[Error]: Unknown token",                  ESC, '[0m', LF, NUL
-e_longnum_msg      db ESC, '[31m', "[Error]: Number is too long",             ESC, '[0m', LF, NUL
-e_invalid_char_msg db ESC, '[31m', "[Error]: Unexpected character in string", ESC, '[0m', LF, NUL
-e_invalid_name_msg db ESC, '[31m', "[Error]: Invalid label name",             ESC, '[0m', LF, NUL
-e_invalid_expr_msg db ESC, '[31m', "[Error]: Invalid expression",             ESC, '[0m', LF, NUL
-e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match",      ESC, '[0m', LF, NUL
-e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label",                ESC, '[0m', LF, NUL
-e_reljmp_range_msg db ESC, '[31m', "[Error]: Relative jump out of range",     ESC, '[0m', LF, NUL
-e_invalid_opds_msg db ESC, '[31m', "[Error]: Invalid operands",               ESC, '[0m', LF, NUL
-e_trail_chars_msg  db ESC, '[31m', "[Error]: Trailing characters",            ESC, '[0m', LF, NUL
+e_open_msg         db ESC, '[31m', "[Error]: Can't open file",                            ESC, '[0m', LF, NUL
+e_lseek_msg        db ESC, '[31m', "[Error]: SYS_LSEEK failed",                           ESC, '[0m', LF, NUL
+e_brk_msg          db ESC, '[31m', "[Error]: Can't allocate memory",                      ESC, '[0m', LF, NUL
+e_read_msg         db ESC, '[31m', "[Error]: SYS_READ failed",                            ESC, '[0m', LF, NUL
+e_unktkn_msg       db ESC, '[31m', "[Error]: Unknown token",                              ESC, '[0m', LF, NUL
+e_longnum_msg      db ESC, '[31m', "[Error]: Number is too long",                         ESC, '[0m', LF, NUL
+e_invalid_char_msg db ESC, '[31m', "[Error]: Unexpected character in string",             ESC, '[0m', LF, NUL
+e_invalid_name_msg db ESC, '[31m', "[Error]: Invalid label name",                         ESC, '[0m', LF, NUL
+e_invalid_expr_msg db ESC, '[31m', "[Error]: Invalid expression",                         ESC, '[0m', LF, NUL
+e_op_sz_match_msg  db ESC, '[31m', "[Error]: Operand size is not match",                  ESC, '[0m', LF, NUL
+e_undef_lbl_msg    db ESC, '[31m', "[Error]: Undefined label",                            ESC, '[0m', LF, NUL
+e_reljmp_range_msg db ESC, '[31m', "[Error]: Relative jump out of range",                 ESC, '[0m', LF, NUL
+e_invalid_opds_msg db ESC, '[31m', "[Error]: Invalid operands",                           ESC, '[0m', LF, NUL
+e_trail_chars_msg  db ESC, '[31m', "[Error]: Trailing characters",                        ESC, '[0m', LF, NUL
+e_incomp_instr_msg db ESC, '[31m', "[Error]: Instruction is incompatible with long mode", ESC, '[0m', LF, NUL
 
 e_line_msg_st      db ESC, '[31m', "[Line]:  "
 E_LINE_MSG_ST_SZ      = $ - e_line_msg_st
@@ -280,6 +299,7 @@ E_RANK_MSG_EN_SZ      = $ - e_rank_msg_en
 
 e_help_msg         db "casm [OPTIONS] <SOURCE> <OUTPUT>", LF
                    db "  -n, --noelf    don't generate ELF header, ignore PHDR directives", LF
+                   db "  -a, --amd64    generate 64-bit code", LF
                    db "  -b, --bytes    show output file size in bytes", LF
                    db "  -s, --style    show your rank and style points percentage", LF
 E_HELP_MSG_SZ         = $ - e_help_msg
@@ -296,6 +316,8 @@ STYLE_BUF_SZ          = $ - style_buf
 ; usage flags
 noelf_flag     db "--noelf", NUL
 noelf_sflag    db "-n", 0, NUL
+amd64_flag     db "--amd64", NUL
+amd64_sflag    db "-a", 0, NUL
 bytes_flag     db "--bytes", NUL
 bytes_sflag    db "-b", 0, NUL
 style_flag     db "--style", NUL
@@ -303,6 +325,7 @@ style_sflag    db "-s", 0, NUL
 
 ; usage flag bools
 do_gen_elf     db 1
+do_gen_64      db 0
 do_show_bytes  db 0
 do_show_rank   db 0
 
@@ -324,17 +347,18 @@ deladrbuf_ptr        dq 0
 modrm_ptr            dq 0
 sib_ptr              dq 0
 sib_offset_ptr       dq 0
+rex_ptr              dq 0
 deladr_offset        dq 0
 labelbuf_slot_offset dq 0
 rank_ptr             dq 0
-current_ptr          dd 0x08048034
+current_ptr          dq 0x0000000008048034
 
 ; file descriptors
 output_fd  dq 0
 
 ; ELF stuff (first CASM versions is Linux x86 and load segments only)
-custom_entry      dd 0
-phdr_flags        dd 0
+custom_entry      dq 0
+phdr_flags        dq 0
 
 ehdr:
   .magic     db 0x7F, "ELF"
@@ -349,11 +373,11 @@ ehdr:
   .machine   dw EM_386
   .version   dd EV_CURRENT
   .entry     dd 0x08048034
-  .phoff     dd 0x00000034
+  .phoff     dd EHSIZE
   .shoff     dd 0x00000000
   .flags     dd 0x00000000
-  .ehsize    dw 0x0034
-  .phentsize dw 0x0020
+  .ehsize    dw EHSIZE
+  .phentsize dw PHENTSIZE
   .phnum     dw 0
   .shentsize dw 0
   .shnum     dw 0
@@ -370,6 +394,41 @@ phdr:
   .flags     dd 0
   .align     dd 0x00001000
   PHENTSIZE = $ - phdr
+
+ehdr64:
+  .magic     db 0x7F, "ELF"
+  .class     db EI_CLASS64
+  .endianess db EI_DATA2LSB
+  .elfver    db EV_CURRENT
+  .osabi     db EI_OSABI
+  .abiver    db EI_VERCURR
+  .padding   db 7 dup(0)
+
+  .type      dw ET_EXEC
+  .machine   dw EM_X86_64
+  .version   dd EV_CURRENT
+  .entry     dq 0x0000000000400040
+  .phoff     dq EHSIZE64
+  .shoff     dq 0x0000000000000000
+  .flags     dd 0x00000000
+  .ehsize    dw EHSIZE64
+  .phentsize dw PHENTSIZE64
+  .phnum     dw 0
+  .shentsize dw 0
+  .shnum     dw 0
+  .shstrndx  dw 0
+  EHSIZE64 = $ - ehdr64
+
+phdr64:
+  .type      dd PT_LOAD
+  .flags     dd 0
+  .offset    dq 0
+  .vaddr     dq 0
+  .paddr     dq 0
+  .filesz    dq 0
+  .memsz     dq 0
+  .align     dq 0x0000000000001000
+  PHENTSIZE64 = $ - phdr64
 
 ; tables
 delimiter_tbl    db 256 dup(0)
@@ -404,6 +463,7 @@ group_jmp_tbl:
   dq invalid_expression_err
   dq invalid_expression_err
   dq invalid_expression_err
+  dq invalid_expression_err
 
 ctrl_jmp_tbl:
   dq ctrl_group.handle_eof
@@ -421,6 +481,7 @@ ctrl_jmp_tbl:
   dq ctrl_group.handle_byte
   dq ctrl_group.handle_word
   dq ctrl_group.handle_dword
+  dq ctrl_group.handle_qword
 
 dir_jmp_tbl:
   dq dir_group.handle_db
@@ -430,6 +491,8 @@ dir_jmp_tbl:
   dq dir_group.handle_data
   dq dir_group.handle_rodata
   dq dir_group.handle_entry
+  dq dir_group.handle_org
+  dq dir_group.handle_dq
 
 instr_node_tbl:
   dq par_trie.mov_node
@@ -532,6 +595,8 @@ instr_node_tbl:
   dq par_trie.std_node
   dq par_trie.cwde_node
   dq par_trie.cdq_node
+  dq par_trie.cqo_node
+  dq par_trie.cdqe_node
 
 einst_node_tbl:
   dq par_trie.je_node
@@ -630,6 +695,8 @@ einst_node_tbl:
   dq par_trie.lidt_node
   dq par_trie.smsw_node
   dq par_trie.lmsw_node
+  dq par_trie.syscall_node
+  dq par_trie.sysret_node
 
 ; lexeme trie
 lex_trie:
@@ -652,11 +719,14 @@ lex_trie:
           LEX_NODE 'a', 0, 0, 1, 0, 0
             LEX_NODE 't', 0, 0, 1, 0, 0
               LEX_NODE 'a', G_DIR, D_RODATA, 0, 0, PHDR + TERM
-    LEX_NODE 'e', 0, 0, 1, 0, TERM
-      LEX_NODE 'n', 0, 0, 1, 0, TERM
-        LEX_NODE 't', 0, 0, 1, 0, TERM
-          LEX_NODE 'r', 0, 0, 1, 0, TERM
+    LEX_NODE 'e', 0, 0, 1, 5, 0
+      LEX_NODE 'n', 0, 0, 1, 0, 0
+        LEX_NODE 't', 0, 0, 1, 0, 0
+          LEX_NODE 'r', 0, 0, 1, 0, 0
             LEX_NODE 'y', G_DIR, D_ENTRY, 0, 0, TERM
+    LEX_NODE 'o', 0, 0, 1, 0, 0
+      LEX_NODE 'r', 0, 0, 1, 0, 0
+        LEX_NODE 'g', G_DIR, D_ORG, 0, 0, TERM
 
 .e_node:
   LEX_NODE 'e', 0, 0, 1, 0, 0
@@ -766,8 +836,11 @@ lex_trie:
       LEX_NODE 'u', 0, 0, 1, 0, 0
         LEX_NODE 'i', 0, 0, 1, 0, 0
           LEX_NODE 'd', G_EINST, E_CPUID, 0, 0, TERM
-    LEX_NODE 'd', 0, 0, 1, 2, 0
-      LEX_NODE 'q', G_INSTR, I_CDQ, 0, 0, TERM
+    LEX_NODE 'd', 0, 0, 1, 3, 0
+      LEX_NODE 'q', G_INSTR, I_CDQ, 1, 0, TERM
+        LEX_NODE 'e', G_INSTR, I_CDQE, 0, 0, AMD64 + TERM
+    LEX_NODE 'q', 0, 0, 1, 2, 0
+      LEX_NODE 'o', G_INSTR, I_CQO, 0, 0, AMD64 + TERM
     LEX_NODE 'r', 0, 0, 1, 0, 0
       LEX_NODE '0', G_CREG, CR_CR0, 0, 1, TERM
       LEX_NODE '1', G_CREG, CR_CR1, 0, 1, TERM
@@ -817,7 +890,7 @@ lex_trie:
 
 .o_node:
   LEX_NODE 'o', 0, 0, 1, 0, 0
-    LEX_NODE 'r', G_INSTR, I_OR, 1, 1, TERM
+    LEX_NODE 'r', G_INSTR, I_OR, 0, 1, TERM
     LEX_NODE 'u', 0, 0, 1, 0, 0
       LEX_NODE 't', G_INSTR, I_OUT, 1, 0, TERM
         LEX_NODE 's', 0, 0, 1, 0, 0
@@ -901,6 +974,7 @@ lex_trie:
       LEX_NODE 'v', G_INSTR, I_DIV, 0, 0, TERM
     LEX_NODE 'b', G_DIR, D_DB, 0, 1, TERM
     LEX_NODE 'd', G_DIR, D_DD, 0, 1, TERM
+    LEX_NODE 'q', G_DIR, D_DQ, 0, 1, TERM
     LEX_NODE 'w', G_DIR, D_DW, 1, 4, TERM
       LEX_NODE 'o', 0, 0, 1, 0, 0
         LEX_NODE 'r', 0, 0, 1, 0, 0
@@ -1031,9 +1105,9 @@ lex_trie:
           LEX_NODE 's', G_EINST, E_SETNS, 0, 1, TERM
           LEX_NODE 'o', G_EINST, E_SETNO, 0, 1, TERM
           LEX_NODE 'p', G_EINST, E_SETPO, 0, 0, TERM
-    LEX_NODE 'y', 0, 0, 1, 10, 0
+    LEX_NODE 'y', 0, 0, 1, 17, 0
       LEX_NODE 's', 0, 0, 1, 0, 0
-        LEX_NODE 'e', 0, 0, 1, 0, 0
+        LEX_NODE 'e', 0, 0, 1, 8, 0
           LEX_NODE 'n', 0, 0, 1, 4, 0
             LEX_NODE 't', 0, 0, 1, 0, 0
               LEX_NODE 'e', 0, 0, 1, 0, 0
@@ -1041,6 +1115,13 @@ lex_trie:
           LEX_NODE 'x', 0, 0, 1, 0, 0
             LEX_NODE 'i', 0, 0, 1, 0, 0
               LEX_NODE 't', G_EINST, E_SYSEXIT, 0, 0, TERM
+        LEX_NODE 'c', 0, 0, 1, 4, 0
+          LEX_NODE 'a', 0, 0, 1, 0, 0
+            LEX_NODE 'l', 0, 0, 1, 0, 0
+              LEX_NODE 'l', G_EINST, E_SYSCALL, 0, 0, AMD64 + TERM
+        LEX_NODE 'r', 0, 0, 1, 0, 0
+          LEX_NODE 'e', 0, 0, 1, 0, 0
+            LEX_NODE 't', G_EINST, E_SYSRET, 0, 0, AMD64 + TERM
     LEX_NODE 'g', 0, 0, 1, 3, 0
       LEX_NODE 'd', 0, 0, 1, 0, 0
         LEX_NODE 't', G_EINST, E_SGDT, 0, 0, TERM
@@ -1099,6 +1180,46 @@ lex_trie:
 
 .r_node:
   LEX_NODE 'r', 0, 0, 1, 0, 0
+    LEX_NODE 'a', 0, 0, 1, 2, 0
+      LEX_NODE 'x', G_REG64, R64_RAX, 0, 0, AMD64 + TERM
+    LEX_NODE 'b', 0, 0, 1, 3, 0
+      LEX_NODE 'x', G_REG64, R64_RBX, 0, 1, AMD64 + TERM
+      LEX_NODE 'p', G_REG64, R64_RBP, 0, 0, AMD64 + TERM
+    LEX_NODE 'i', 0, 0, 1, 2, 0
+      LEX_NODE 'p', G_REG64, R64_RIP, 0, 0, AMD64 + TERM
+    LEX_NODE '8', G_REG64, R64_R8, 1, 4, AMD64 + TERM
+      LEX_NODE 'b', G_REG8, R8_R8B, 0, 1, AMD64 + TERM
+      LEX_NODE 'w', G_REG16, R16_R8W, 0, 1, AMD64 + TERM
+      LEX_NODE 'd', G_REG32, R32_R8D, 0, 0, AMD64 + TERM
+    LEX_NODE '9', G_REG64, R64_R9, 1, 4, AMD64 + TERM
+      LEX_NODE 'b', G_REG8, R8_R9B, 0, 1, AMD64 + TERM
+      LEX_NODE 'w', G_REG16, R16_R9W, 0, 1, AMD64 + TERM
+      LEX_NODE 'd', G_REG32, R32_R9D, 0, 0, AMD64 + TERM
+    LEX_NODE '1', 0, 0, 1, 25, 0
+      LEX_NODE '0', G_REG64, R64_R10, 1, 4, AMD64 + TERM
+        LEX_NODE 'b', G_REG8, R8_R10B, 0, 1, AMD64 + TERM
+        LEX_NODE 'w', G_REG16, R16_R10W, 0, 1, AMD64 + TERM
+        LEX_NODE 'd', G_REG32, R32_R10D, 0, 0, AMD64 + TERM
+      LEX_NODE '1', G_REG64, R64_R11, 1, 4, AMD64 + TERM
+        LEX_NODE 'b', G_REG8, R8_R11B, 0, 1, AMD64 + TERM
+        LEX_NODE 'w', G_REG16, R16_R11W, 0, 1, AMD64 + TERM
+        LEX_NODE 'd', G_REG32, R32_R11D, 0, 0, AMD64 + TERM
+      LEX_NODE '2', G_REG64, R64_R12, 1, 4, AMD64 + TERM
+        LEX_NODE 'b', G_REG8, R8_R12B, 0, 1, AMD64 + TERM
+        LEX_NODE 'w', G_REG16, R16_R12W, 0, 1, AMD64 + TERM
+        LEX_NODE 'd', G_REG32, R32_R12D, 0, 0, AMD64 + TERM
+      LEX_NODE '3', G_REG64, R64_R13, 1, 4, AMD64 + TERM
+        LEX_NODE 'b', G_REG8, R8_R13B, 0, 1, AMD64 + TERM
+        LEX_NODE 'w', G_REG16, R16_R13W, 0, 1, AMD64 + TERM
+        LEX_NODE 'd', G_REG32, R32_R13D, 0, 0, AMD64 + TERM
+      LEX_NODE '4', G_REG64, R64_R14, 1, 4, AMD64 + TERM
+        LEX_NODE 'b', G_REG8, R8_R14B, 0, 1, AMD64 + TERM
+        LEX_NODE 'w', G_REG16, R16_R14W, 0, 1, AMD64 + TERM
+        LEX_NODE 'd', G_REG32, R32_R14D, 0, 0, AMD64 + TERM
+      LEX_NODE '5', G_REG64, R64_R15, 1, 0, AMD64 + TERM
+        LEX_NODE 'b', G_REG8, R8_R15B, 0, 1, AMD64 + TERM
+        LEX_NODE 'w', G_REG16, R16_R15W, 0, 1, AMD64 + TERM
+        LEX_NODE 'd', G_REG32, R32_R15D, 0, 0, AMD64 + TERM
     LEX_NODE 'e', 0, 0, 1, 9, 0
       LEX_NODE 't', G_INSTR, I_RET, 1, 2, TERM
         LEX_NODE 'f', G_INSTR, I_RETF, 0, 0, TERM
@@ -1111,12 +1232,17 @@ lex_trie:
     LEX_NODE 'o', 0, 0, 1, 3, 0
       LEX_NODE 'l', G_INSTR, I_ROL, 0, 1, TERM
       LEX_NODE 'r', G_INSTR, I_ROR, 0, 0, TERM
-    LEX_NODE 's', 0, 0, 1, 2, 0
+    LEX_NODE 's', 0, 0, 1, 4, 0
+      LEX_NODE 'i', G_REG64, R64_RSI, 0, 1, TERM
+      LEX_NODE 'p', G_REG64, R64_RSP, 0, 1, TERM
       LEX_NODE 'm', G_EINST, E_RSM, 0, 0, TERM
-    LEX_NODE 'c', 0, 0, 1, 3, 0
+    LEX_NODE 'c', 0, 0, 1, 4, 0
+      LEX_NODE 'x', G_REG64, R64_RCX, 0, 1, AMD64 + TERM
       LEX_NODE 'l', G_INSTR, I_RCL, 0, 1, TERM
       LEX_NODE 'r', G_INSTR, I_RCR, 0, 0, TERM
     LEX_NODE 'd', 0, 0, 1, 0, 0
+      LEX_NODE 'x', G_REG64, R64_RDX, 0, 1, AMD64 + TERM
+      LEX_NODE 'i', G_REG64, R64_RDI, 0, 1, AMD64 + TERM
       LEX_NODE 't', 0, 0, 1, 3, 0
         LEX_NODE 's', 0, 0, 1, 0, 0
           LEX_NODE 'c', G_EINST, E_RDTSC, 0, 0, TERM
@@ -1146,21 +1272,29 @@ lex_trie:
 
 .f_node:
   LEX_NODE 'f', 0, 0, 1, 0, 0
-    LEX_NODE 's', G_SREG, SR_FS, 1, 2, TERM
+    LEX_NODE 's', G_SREG, SR_FS, 1, 0, TERM
       LEX_NODE ':', G_SPREF, SP_FS, 0, 0, TERM
 
 .g_node:
   LEX_NODE 'g', 0, 0, 1, 0, 0
-    LEX_NODE 's', G_SREG, SR_GS, 1, 2, TERM
+    LEX_NODE 's', G_SREG, SR_GS, 1, 0, TERM
       LEX_NODE ':', G_SPREF, SP_GS, 0, 0, TERM
+
+.q_node:
+  LEX_NODE 'q', 0, 0, 1, 0, 0
+    LEX_NODE 'w', 0, 0, 1, 0, 0
+      LEX_NODE 'o', 0, 0, 1, 0, 0
+        LEX_NODE 'r', 0, 0, 1, 0, 0
+          LEX_NODE 'd', G_CTRL, C_QWORD, 0, 0, AMD64 + TERM
 
 ; token trie
 par_trie:
 .mov_node:
-  PAR_NODE G_REG32, 0x00, 1, 7, 0, 0
+  PAR_NODE G_REG32, 0x00, 1, 8, 0, 0
     PAR_NODE G_CTRL, 0x8B, 0, 1, MEM32_BIT, MODRM + SIB + TERM
     PAR_NODE G_REG32, 0x89, 0, 1, 0, MODRM + TERM
     PAR_NODE G_CTRL, 0xB8, 0, 1, IMM32_BIT, SHORT_OP + TERM
+    PAR_NODE G_CTRL, 0xC7, 0, 1, IMM32_BIT, MODRM + TERM
     PAR_NODE G_SREG, 0x8C, 0, 1, 0, MODRM + TERM
     PAR_NODE G_CREG, 0x20, 0, 1, 0, TWOBYTE + MODRM + TERM
     PAR_NODE G_DREG, 0x21, 0, 0, 0, TWOBYTE + MODRM + TERM
@@ -1175,15 +1309,17 @@ par_trie:
     PAR_NODE G_REG16, 0x89, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
     PAR_NODE G_CTRL, 0xC7, 0, 1, MEM16_BIT + IMM16_BIT, OPSIZE + MODRM + SIB + TERM
     PAR_NODE G_SREG, 0x8C, 0, 0, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
-  PAR_NODE G_REG16, 0x00, 1, 5, 0, 0
+  PAR_NODE G_REG16, 0x00, 1, 6, 0, 0
     PAR_NODE G_CTRL, 0x8B, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
     PAR_NODE G_REG16, 0x89, 0, 1, 0, OPSIZE + MODRM + TERM
     PAR_NODE G_CTRL, 0xB8, 0, 1, IMM16_BIT, OPSIZE + SHORT_OP + TERM
+    PAR_NODE G_CTRL, 0xC7, 0, 1, IMM16_BIT, OPSIZE + MODRM + TERM
     PAR_NODE G_SREG, 0x8C, 0, 0, 0, OPSIZE + MODRM + TERM
-  PAR_NODE G_REG8, 0x00, 1, 4, 0, 0
+  PAR_NODE G_REG8, 0x00, 1, 5, 0, 0
     PAR_NODE G_REG8, 0x88, 0, 1, 0, MODRM + TERM
     PAR_NODE G_CTRL, 0x8A, 0, 1, MEM8_BIT, MODRM + SIB + TERM
-    PAR_NODE G_CTRL, 0xB0, 0, 0, IMM8_BIT, SHORT_OP + TERM
+    PAR_NODE G_CTRL, 0xB0, 0, 1, IMM8_BIT, SHORT_OP + TERM
+    PAR_NODE G_CTRL, 0xC6, 0, 0, IMM32_BIT, MODRM + TERM
   PAR_NODE G_SREG, 0x00, 1, 3, 0, 0
     PAR_NODE G_REG16, 0x8E, 0, 1, 0, MODRM + TERM
     PAR_NODE G_CTRL, 0x8E, 0, 0, MEM16_BIT, MODRM + SIB + TERM
@@ -1202,8 +1338,12 @@ par_trie:
 
 .push_node:
   PAR_NODE G_REG32, 0x50, 0, 1, 0, SHORT_OP + TERM
+  PAR_NODE G_REG32, 0xFF, 0, 1, 0, MODRM + OPNUM7 + TERM
+  PAR_NODE G_REG16, 0x50, 0, 1, 0, OPSIZE + SHORT_OP + TERM
+  PAR_NODE G_REG16, 0xFF, 0, 1, 0, OPSIZE + MODRM + OPNUM7 + TERM
   PAR_NODE G_CTRL, 0x68, 0, 1, IMM32_BIT, TERM
   PAR_NODE G_CTRL, 0xFF, 0, 1, MEM32_BIT, MODRM + SIB + OPNUM7 + TERM
+  PAR_NODE G_CTRL, 0xFF, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + OPNUM7 + TERM
   PAR_NODE SR_ES, 0x06, 0, 1, 0, SREG + TERM
   PAR_NODE SR_CS, 0x0E, 0, 1, 0, SREG + TERM
   PAR_NODE SR_SS, 0x16, 0, 1, 0, SREG + TERM
@@ -1213,8 +1353,10 @@ par_trie:
 
 .pop_node:
   PAR_NODE G_REG32, 0x58, 0, 1, 0, SHORT_OP + TERM
+  PAR_NODE G_REG32, 0x8F, 0, 1, 0, MODRM + TERM
   PAR_NODE G_CTRL, 0x8F, 0, 1, MEM32_BIT, MODRM + SIB + TERM
   PAR_NODE G_REG16, 0x58, 0, 1, 0, OPSIZE + SHORT_OP + TERM
+  PAR_NODE G_REG16, 0x8F, 0, 1, 0, OPSIZE + MODRM + TERM
   PAR_NODE G_CTRL, 0x8F, 0, 1, MEM16_BIT, OPSIZE + MODRM + SIB + TERM
   PAR_NODE SR_ES, 0x07, 0, 1, 0, SREG + TERM
   PAR_NODE SR_SS, 0x17, 0, 1, 0, SREG + TERM
@@ -1448,13 +1590,17 @@ par_trie:
   PAR_NODE G_CTRL, 0xFE, 0, 1, MEM8_BIT, SIB + MODRM + OPNUM1 + TERM
   PAR_NODE G_CTRL, 0xFF, 0, 1, MEM32_BIT, SIB + MODRM + OPNUM1 + TERM
   PAR_NODE G_CTRL, 0xFF, 0, 1, MEM16_BIT, OPSIZE + SIB + MODRM + OPNUM1 + TERM
-  PAR_NODE G_REG32, 0x40, 0, 0, 0, SHORT_OP + TERM
+  PAR_NODE G_REG8, 0xFE, 0, 1, 0, MODRM + OPNUM1 + TERM
+  PAR_NODE G_REG32, 0xFF, 0, 1, 0, MODRM + OPNUM1 + TERM
+  PAR_NODE G_REG16, 0xFF, 0, 0, 0, OPSIZE + MODRM + OPNUM1 + TERM
 
 .dec_node:
   PAR_NODE G_CTRL, 0xFE, 0, 1, MEM8_BIT, SIB + MODRM + OPNUM2 + TERM
   PAR_NODE G_CTRL, 0xFF, 0, 1, MEM32_BIT, SIB + MODRM + OPNUM2 + TERM
   PAR_NODE G_CTRL, 0xFF, 0, 1, MEM16_BIT, OPSIZE + SIB + MODRM + OPNUM2 + TERM
-  PAR_NODE G_REG32, 0x48, 0, 0, 0, SHORT_OP + TERM
+  PAR_NODE G_REG8, 0xFE, 0, 1, 0, MODRM + OPNUM2 + TERM
+  PAR_NODE G_REG32, 0xFF, 0, 1, 0, MODRM + OPNUM2 + TERM
+  PAR_NODE G_REG16, 0xFF, 0, 0, 0, OPSIZE + MODRM + OPNUM2 + TERM
 
 .sub_node:
   PAR_NODE R8_AL, 0x00, 1, 4, REG8_BIT, 0
@@ -2028,6 +2174,12 @@ par_trie:
 .cdq_node:
   PAR_NODE G_CTRL, 0x99, 0, 0, NOP_BIT, TERM
 
+.cqo_node:
+  PAR_NODE G_CTRL, 0x99, 0, 0, NOP_BIT, REXW + TERM
+
+.cdqe_node:
+  PAR_NODE G_CTRL, 0x98, 0, 0, NOP_BIT, REXW + TERM
+
 ; extended instructions
 .je_node:
   PAR_NODE G_CTRL, 0x84, 0, 0, IMM32_BIT + REL32_BIT, TWOBYTE + TERM
@@ -2573,3 +2725,9 @@ par_trie:
 .lmsw_node:
   PAR_NODE G_CTRL, 0x01, 0, 1, MEM16_BIT, TWOBYTE + MODRM + SIB + OPNUM7 + TERM
   PAR_NODE G_REG16, 0x01, 0, 0, 0, TWOBYTE + MODRM + OPNUM7 + TERM
+
+.syscall_node:
+  PAR_NODE G_CTRL, 0x05, 0, 0, NOP_BIT, TWOBYTE + TERM
+
+.sysret_node:
+  PAR_NODE G_CTRL, 0x07, 0, 0, NOP_BIT, TWOBYTE + TERM
