@@ -1321,6 +1321,7 @@ traverse_operands:
   test      rbx, RIPREL_BIT                           ;
   jz        .not_riprel                               ;
   mov       byte [r14 - 1], 00000101b                 ;
+  mov       qword [sib_offset_ptr], r14               ;
   lea       r14, [r14 + 4]                            ;
   add       r15, 4                                    ;
   add       qword [current_ptr], 4                    ;
