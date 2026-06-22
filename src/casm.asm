@@ -32,7 +32,7 @@ include "macros.inc"
 segment readable executable
 _start:
   cmp       qword [rsp], 3                                                 ; handle usage error
-  jl        usage_err                                                      ;
+  jb        usage_err                                                      ;
 
   mov       rcx, 2                                                         ; handle usage flags
   mov       rdx, 0                                                         ;
@@ -60,7 +60,7 @@ parse_flags:
   je        usage_err                                                      ;
   inc       rdx                                                            ;
   cmp       rdx, 2                                                         ;
-  jg        usage_err                                                      ;
+  ja        usage_err                                                      ;
   cmp       rcx, qword [rsp]                                               ;
   je        .end_flags_parse                                               ;
   inc       rcx                                                            ;
