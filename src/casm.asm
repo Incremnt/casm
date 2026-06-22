@@ -339,13 +339,12 @@ do_show_bytes  db 0
 do_show_rank   db 0
 
 ; ranks
-st_p           db ESC, "[38;5;254m", ESC, "[48;5;214m", " P ", ESC, "[0m"
-st_s           db ESC, "[38;5;254m", ESC, "[38;5;196m", "S  ", ESC, "[0m"
-st_a           db ESC, "[38;5;254m", ESC, "[38;5;208m", "A  ", ESC, "[0m"
-st_b           db ESC, "[38;5;254m", ESC, "[38;5;214m", "B  ", ESC, "[0m"
-st_c           db ESC, "[38;5;254m", ESC, "[38;5;112m", "C  ", ESC, "[0m"
-st_d           db ESC, "[38;5;254m", ESC, "[38;5;069m", "D  ", ESC, "[0m"
-RANK_SZ           = $ - st_d
+st_p db ESC, "[38;5;255m", ESC, "[48;5;214m", " P ", ESC, "[0m", NUL
+st_s db ESC, "[38;5;196m", "S", ESC, "[0m", NUL
+st_a db ESC, "[38;5;208m", "A", ESC, "[0m", NUL
+st_b db ESC, "[38;5;214m", "B", ESC, "[0m", NUL
+st_c db ESC, "[38;5;112m", "C", ESC, "[0m", NUL
+st_d db ESC, "[38;5;069m", "D", ESC, "[0m", NUL
 
 ; pointers
 lex_irbuf_ptr        dq 0
