@@ -78,7 +78,7 @@ dont_show_bytes:
   xor       rdx, rdx                                             ;
   dec       rbp                                                  ;
   cmp       rbp, 101                                             ;
-  jl        .not_float                                           ;
+  jb        .not_float                                           ;
   xchg      rax, rbp                                             ;
 .not_float:
   div       rbp                                                  ;
@@ -92,24 +92,24 @@ dont_show_bytes:
   mov       rax, rdx                                             ;
   xor       rdx, rdx                                             ;
   cmp       qword [current_line], 102                            ;
-  jge       .float                                               ;
+  jae       .float                                               ;
   mul       rcx                                                  ;
   jmp       .float_skip                                          ;
 .float:
   div       rcx                                                  ;
 .float_skip:
   cmp       rax, 100                                             ;
-  jg        .p_rank_overflow                                     ;
+  ja        .p_rank_overflow                                     ;
   cmp       rax, 25                                              ; ranks:
-  jl        .d_rank                                              ; P 100-85%
+  jb        .d_rank                                              ; P 100-85%
   cmp       rax, 40                                              ; S 85-70%
-  jl        .c_rank                                              ; A 70-65%
+  jb        .c_rank                                              ; A 70-65%
   cmp       rax, 65                                              ; B 65-40%
-  jl        .b_rank                                              ; C 40-25%
+  jb        .b_rank                                              ; C 40-25%
   cmp       rax, 70                                              ; D 25-0%
-  jl        .a_rank                                              ;
+  jb        .a_rank                                              ;
   cmp       rax, 85                                              ;
-  jl        .s_rank                                              ;
+  jb        .s_rank                                              ;
   jmp       .p_rank                                              ;
 .p_rank_overflow:
   mov       rax, 100                                             ;
