@@ -103,6 +103,12 @@ ctrl_group:
 .end_deladr_write:
   pop       r14                                    ;
   pop       qword [current_line]                   ;
+  cmp       qword [custom_entry], 0                ;
+  je        .default_entry                         ; write custom entry if there was .entry directive
+  mov       rdi, qword [custom_entry]              ;
+  mov       qword [ehdr64.entry], rdi              ;
+  mov       dword [ehdr.entry], edi                ;
+.default_entry:
   test      rbx, PHFIRST_BIT                       ;
   jnz       parser_end                             ;
   cmp       rbp, r11                               ;
@@ -120,11 +126,6 @@ ctrl_group:
 .skip_expand:
   cmp       byte [do_gen_64], 1                    ;
   je        .amd64                                 ;
-  cmp       dword [custom_entry], 0                ;
-  je        .default_entry                         ; write custom entry if there was .entry directive
-  mov       edi, dword [custom_entry]              ;
-  mov       dword [ehdr.entry], edi                ;
-.default_entry:
   mov       edx, dword [phdr_flags]                ;
   mov       dword [phdr.flags], edx                ;
   mov       edx, dword [phdr.filesz]               ;
@@ -148,11 +149,6 @@ ctrl_group:
   sub       dword [rdi + phdr.memsz - phdr], ecx   ;
   jmp       parser_end                             ;
 .amd64:
-  cmp       dword [custom_entry], 0                   ;
-  je        .default_entry64                          ;
-  mov       rdi, qword [custom_entry]                 ;
-  mov       qword [ehdr64.entry], rdi                 ;
-.default_entry64:
   mov       edx, dword [phdr_flags]                   ;
   mov       dword [phdr64.flags], edx                 ;
   mov       rdx, qword [phdr64.filesz]                ;
@@ -206,8 +202,9 @@ ctrl_group:
   jz        invalid_operands_err                   ;
   test      rbx, ENTRY_BIT                         ;
   jz        .not_custom_entry                      ;
+  xor       rdi, rdi                               ;
   mov       edi, dword [r12 + 2]                   ;
-  mov       dword [custom_entry], edi              ;
+  mov       qword [custom_entry], rdi              ;
   lea       r12, [r12 + 6]                         ;
   jmp       parse_ir                               ;
 .not_custom_entry:
@@ -660,6 +657,8 @@ ctrl_group:
   jz        invalid_expression_err                 ;
   xor       rbx, LABEL_BIT                         ;
   inc       qword [style_points]                   ; labels are cool
+  cmp       dword [current_ptr + 4], 0             ;
+  jne       label_range_err                        ;
   mov       r13, qword [labelbuf_ptr]              ;
   lea       r12, [r12 + 2]                         ;
   xor       rax, rax                               ; check if label is already defined
