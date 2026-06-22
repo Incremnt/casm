@@ -324,10 +324,11 @@ ctrl_group:
   cmovnz    rcx, rdi                               ;
   test      rbx, IMM64_BIT                         ;
   cmovnz    rcx, r8                                ;
-  jnz       .str64                                 ;
+  test      rbx, UNLIMIMM_BIT                      ;
+  jnz       .skip_bit_clean                        ;
   imul      rdx, rcx, IMM8_BIT                     ;
   xor       rbx, rdx                               ;
-.str64:
+.skip_bit_clean:
   xor       rdx, rdx                               ;
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ; fix endianess
