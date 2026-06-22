@@ -312,17 +312,22 @@ ctrl_group:
   lea       r12, [r12 + 2]                         ;
   test      rbx, UNLIMSTR_BIT                      ; write all string if there was db directive
   jnz       .write_all_str                         ;
-  test      rbx, IMM_BIT                           ;
+  test      rbx, IMM_BIT + IMM64_BIT               ;
   jz        invalid_operands_err                   ;
   mov       rcx, 1                                 ; number with extra steps
   mov       rsi, 2                                 ;
   mov       rdi, 4                                 ;
+  mov       r8, 8                                  ;
   test      rbx, IMM16_BIT                         ;
   cmovnz    rcx, rsi                               ;
   test      rbx, IMM32_BIT                         ;
   cmovnz    rcx, rdi                               ;
+  test      rbx, IMM64_BIT                         ;
+  cmovnz    rcx, r8                                ;
+  jnz       .str64                                 ;
   imul      rdx, rcx, IMM8_BIT                     ;
   xor       rbx, rdx                               ;
+.str64:
   xor       rdx, rdx                               ;
   mov       ax, word [r12]                         ;
   xchg      ah, al                                 ; fix endianess
