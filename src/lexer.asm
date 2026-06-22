@@ -96,7 +96,7 @@ next_lex:
   test      al, al                            ; handle eof
   jz        handle_eof                        ;
   cmp       byte [rbp + rax], DELIM           ; other logic if char is delimiter
-  jge       handle_del                        ;
+  jae       handle_del                        ;
   movzx     rdx, word [rbx + rax * 2]         ; trie node index in rdx
   test      dx, dx                            ; error if node is unknown
   jz        unk_tkn_err                       ;
@@ -161,7 +161,7 @@ write_ir:
   test      si, si                            ; error if character after lexeme is letter, number or string
   jz        unk_tkn_err                       ;
   cmp       r14, r9                           ; expand IR buffer if it needs more space
-  jl        .skip_call                        ;
+  jb        .skip_call                        ;
   call      exp_ir_buf                        ;
 .skip_call:
   test      byte [r15 + LEX_FLAGS_OFF], PHDR  ;
@@ -248,7 +248,7 @@ handle_del:
 
 write_del:
   cmp       r14, r9                  ; expand IR buffer if it needs more space
-  jl        .skip_call               ;
+  jb        .skip_call               ;
   call      exp_ir_buf               ;
 .skip_call:
   mov       byte [r14 + 1], sil      ;
@@ -259,7 +259,7 @@ write_del:
 
 write_label:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
-  jl        .skip_call                       ;
+  jb        .skip_call                       ;
   call      exp_ir_buf                       ;
 .skip_call:
   mov       byte [r14 + 1], sil              ; set address/label delimiter start IR
@@ -269,7 +269,7 @@ write_label:
   je        invalid_name_err                 ;
 .write_insides:
   cmp       r14, r9                          ;
-  jl        .skip_call2                      ;
+  jb        .skip_call2                      ;
   call      exp_ir_buf                       ;
 .skip_call2:
   inc       r12                              ;
@@ -281,7 +281,7 @@ write_label:
   jmp       .write_insides                   ;
 .end_write:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
-  jl        .skip_call3                      ;
+  jb        .skip_call3                      ;
   call      exp_ir_buf                       ;
 .skip_call3:
   mov       byte [r14 + 1], sil              ; set long delimiter end IR
@@ -291,7 +291,7 @@ write_label:
 
 write_string:
   cmp       r14, r9                          ; expand IR buffer if it needs more space, blah, blah, blah...
-  jl        .skip_call                       ;
+  jb        .skip_call                       ;
   call      exp_ir_buf                       ;
 .skip_call:
   mov       byte [r14 + 1], C_STR            ; set string start IR
@@ -305,7 +305,7 @@ write_string:
   inc       qword [current_line]             ;
 .not_lf:
   cmp       r14, r9                          ;
-  jl        .skip_call2                      ;
+  jb        .skip_call2                      ;
   push      rax                              ;
   call      exp_ir_buf                       ;
   pop       rax                              ;
@@ -322,7 +322,7 @@ write_string:
   jmp       invalid_char_err                 ;
 write_strend_ir:
   cmp       r14, r9                          ;
-  jl        .skip_call                       ;
+  jb        .skip_call                       ;
   call      exp_ir_buf                       ;
 .skip_call:
   mov       byte [r14 + 1], C_STR            ; set string end IR
@@ -333,7 +333,7 @@ write_strend_ir:
 
 write_number:
   cmp       r14, r9                          ; expand IR buffer if it needs more space
-  jl        .skip_call                       ;
+  jb        .skip_call                       ;
   call      exp_ir_buf                       ;
 .skip_call:
   mov       byte [r14 + 1], C_NUM            ; set number start IR
@@ -343,7 +343,7 @@ write_number:
 .convert_num:
   lea       rsi, [rsi - '0']                 ; convert character to number
   cmp       sil, 10                          ; error if it is not number character
-  jge       unk_tkn_err                      ;
+  jae       unk_tkn_err                      ;
   lea       rdi, [rdi + rdi * 4]             ;
   shl       rdi, 1                           ;
   jc        long_num_err                     ;
@@ -359,7 +359,7 @@ write_number:
   mov       rdi, 4                           ;
 .write_insides:
   cmp       r14, r9                          ;
-  jl        .skip_call2                      ;
+  jb        .skip_call2                      ;
   push      rdi                              ;
   call      exp_ir_buf                       ;
   pop       rdi                              ;
@@ -394,7 +394,7 @@ handle_eof:
   cmp       ax, C_LF                                      ;
   je        .dont_write_lf                                ;
   cmp       r14, r9                                       ;
-  jl        .skip_call                                    ;
+  jb        .skip_call                                    ;
   call      exp_ir_buf                                    ;
 .skip_call:
   mov       byte [r14 + 1], C_LF                          ;
