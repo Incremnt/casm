@@ -147,7 +147,13 @@ dont_show_bytes:
   SYSCALL_3 SYS_WRITE, STDOUT, e_style_msg_en, E_STYLE_MSG_EN_SZ ;
   SYSCALL_3 SYS_WRITE, STDOUT, e_rank_msg_st, E_RANK_MSG_ST_SZ   ;
   mov       rsi, qword [rank_ptr]                                ;
-  SYSCALL_3 SYS_WRITE, STDOUT, rsi, RANK_SZ                      ;
+  mov       rdi, rsi                                             ;
+  mov       rcx, -1                                              ;
+  mov       rax, NUL                                             ;
+  repne     scasb                                                ;
+  not       rcx                                                  ;
+  dec       rcx                                                  ;
+  SYSCALL_3 SYS_WRITE, STDOUT, rsi, rcx                          ;
   SYSCALL_3 SYS_WRITE, STDOUT, e_rank_msg_en, E_RANK_MSG_EN_SZ   ;
 
 dont_show_style:
