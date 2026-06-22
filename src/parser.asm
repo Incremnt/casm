@@ -106,7 +106,7 @@ ctrl_group:
   test      rbx, PHFIRST_BIT                       ;
   jnz       parser_end                             ;
   cmp       rbp, r11                               ;
-  jl        .skip_expand                           ;
+  jb        .skip_expand                           ;
   sub       r11, qword [phdrbuf_ptr]               ;
   push      r11                                    ; expand phdr buffer if it needs more space
   push      r11                                    ;
@@ -297,7 +297,7 @@ ctrl_group:
   jnz       invalid_expression_err                 ;
   bsr       ecx, ecx                               ;
   cmp       ecx, 3                                 ;
-  jg        invalid_expression_err                 ;
+  ja        invalid_expression_err                 ;
   mov       rdi, qword [sib_ptr]                   ;
   and       byte [rdi], 00111111b                  ;
   shl       cl, 6                                  ;
@@ -346,7 +346,7 @@ ctrl_group:
   jne       .write_str                             ;
 .skip_str_write:
   cmp       rdx, rcx                               ;
-  jg        op_sz_not_match_err                    ;
+  ja        op_sz_not_match_err                    ;
   sub       rcx, rdx                               ;
   add       r14, rcx                               ;
   add       r15, rcx                               ;
@@ -393,7 +393,7 @@ ctrl_group:
   jmp       .check_strlen                          ;
 .end_strlen_check:
   cmp       ecx, 4                                 ;
-  jg        op_sz_not_match_err                    ;
+  ja        op_sz_not_match_err                    ;
   and       edx, edi                               ;
   mov       rdi, qword [sib_offset_ptr]            ;
   test      rbx, MINUS_BIT                         ;
@@ -419,7 +419,7 @@ ctrl_group:
   cmp       byte [r12 + 1], R_CONST                ;
   je        skip_ir                                ;
   cmp       byte [r12 + 1], REG_R8                 ;
-  jl        .mod_not_rexb                          ;
+  jb        .mod_not_rexb                          ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x01                       ;
 .mod_not_rexb:
@@ -434,7 +434,7 @@ ctrl_group:
   cmp       byte [r12 + 1], R_CONST                ;
   je        skip_ir                                ;
   cmp       byte [r12 + 1], REG_R8                 ;
-  jl        .mod_not_rexr                          ;
+  jb        .mod_not_rexr                          ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x04                       ;
 .mod_not_rexr:
@@ -493,7 +493,7 @@ ctrl_group:
   test      rbx, IDXFIRST_BIT                      ;
   jz        .set_modrm_base                        ;
   cmp       byte [r12 + 1], REG_R8                 ;
-  jl        .mod_not_rexx                          ;
+  jb        .mod_not_rexx                          ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x02                       ;
 .mod_not_rexx:
@@ -508,7 +508,7 @@ ctrl_group:
   jmp       parse_ir                               ;
 .set_modrm_base:
   cmp       byte [r12 + 1], REG_R8                 ;
-  jl        .mods_not_rexb                         ;
+  jb        .mods_not_rexb                         ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x01                       ;
 .mods_not_rexb:
@@ -529,7 +529,7 @@ ctrl_group:
   test      rbx, BASFIRST_BIT                      ;
   jz        invalid_expression_err                 ;
   cmp       byte [r12 + 1], REG_R8                 ;
-  jl        .not_rexb                              ;
+  jb        .not_rexb                              ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x01                       ;
 .not_rexb:
@@ -549,7 +549,7 @@ ctrl_group:
   jmp       parse_ir                               ;
 .write_index:
   cmp       byte [r12 + 1], REG_R8                 ;
-  jl        .not_rexx                              ;
+  jb        .not_rexx                              ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x02                       ;
 .not_rexx:
@@ -962,7 +962,7 @@ traverse_operands:
   jne       .not_rexreg                              ;
 .rex_reg:
   cmp       ah, REG_R8                               ;
-  jl        .not_rexreg                              ;
+  jb        .not_rexreg                              ;
   or        rbx, REXSZ_BIT                           ;
 .not_rexreg:
   cmp       al, G_CTRL                               ;
@@ -1110,9 +1110,9 @@ traverse_operands:
   jz        .terminal                              ;
 .not_longest:
   cmp       ah, C_BYTE                             ;
-  jl        .not_mem                               ;
+  jb        .not_mem                               ;
   cmp       ah, C_QWORD                            ;
-  jg        .not_mem                               ;
+  ja        .not_mem                               ;
   cmp       ah, C_QWORD                            ;
   jne       .skip_mem                              ;
   or        rbx, REXW_BIT                          ;
@@ -1123,7 +1123,7 @@ traverse_operands:
   cmp       byte [r13 - 2], G_REG64                ;
   jne       .mem_not_r64                           ;
   cmp       byte [r13 - 1], REG_R8                 ;
-  jl        .not_rexmem                            ;
+  jb        .not_rexmem                            ;
   or        rbx, REXSZ_BIT                         ;
 .not_rexmem:
   cmp       byte [r13 - 1], R64_RIP                ;
@@ -1133,7 +1133,7 @@ traverse_operands:
   cmp       byte [r13 - 2], G_REG32                ;
   jne       .mem_not_r32                           ;
   cmp       byte [r13 - 1], REG_R8                 ;
-  jl        .not_rexmem32                          ;
+  jb        .not_rexmem32                          ;
   or        rbx, REXSZ_BIT                         ;
 .not_rexmem32:
   cmp       byte [do_gen_64], 1                    ;
@@ -1471,7 +1471,7 @@ dir_group:
 
 .write_phdr:
   cmp       rbp, r11                                  ;
-  jl        .skip_expand                              ;
+  jb        .skip_expand                              ;
   sub       r11, qword [phdrbuf_ptr]                  ;
   push      r11                                       ; expand phdr buffer if it needs more space
   push      r11                                       ;
@@ -1513,7 +1513,7 @@ dir_group:
 
 .write_phdr64:
   cmp       rbp, r11                                  ;
-  jl        .skip_expand64                            ;
+  jb        .skip_expand64                            ;
   sub       r11, qword [phdrbuf_ptr]                  ;
   push      r11                                       ; expand phdr buffer if it needs more space
   push      r11                                       ;
