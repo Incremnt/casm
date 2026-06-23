@@ -423,6 +423,8 @@ ctrl_group:
   je        skip_ir                                ;
   cmp       byte [r12 + 1], REG_R8                 ;
   jb        .mod_not_rexb                          ;
+  cmp       byte [r12 + 1], REG_SIL                ;
+  jae       .mod_not_rexb                          ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x01                       ;
 .mod_not_rexb:
@@ -438,6 +440,8 @@ ctrl_group:
   je        skip_ir                                ;
   cmp       byte [r12 + 1], REG_R8                 ;
   jb        .mod_not_rexr                          ;
+  cmp       byte [r12 + 1], REG_SIL                ;
+  jae       .mod_not_rexr                          ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x04                       ;
 .mod_not_rexr:
