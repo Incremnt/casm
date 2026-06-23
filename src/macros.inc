@@ -513,6 +513,8 @@ R8_R12B = 20
 R8_R13B = 21
 R8_R14B = 22
 R8_R15B = 23
+R8_SIL  = 38
+R8_DIL  = 39
 
 ; prefixes (already contain opcode prefix)
 P_REPE  = 0xF3
@@ -576,4 +578,5 @@ R64_R15 = 23
 
 ; neutral group registers (for opcode short forms & parser)
 REG_R8  = 16
+REG_SIL = 38
 R_CONST = 0xFF
