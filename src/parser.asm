@@ -1085,8 +1085,17 @@ traverse_operands:
   test      word [rsi + PAR_NODEFLAGS_OFF], SHORT_OP ; search for compatible opcodes
   jz        .compatible                              ;
   cmp       byte [rsi + PAR_SIBOFF_OFF], 0           ;
-  je        incomp_instr_err                         ;
-  jmp       .go_to_sibling                           ;
+  je        .no_siblings                             ;
+  test      rbx, REXW_BIT + REXSZ_BIT                ;
+  jnz       .go_to_sibling                           ;
+  cmp       al, G_REG64                              ;
+  je        .go_to_sibling                           ;
+  cmp       ah, REG_R8                               ;
+  je        .go_to_sibling                           ;
+  jmp       .compatible                              ;
+.no_siblings:
+  cmp       ah, REG_R8                               ;
+  jae       invalid_operands_err                     ;
 .compatible:
   cmp       al, G_REG64                              ;
   jne       .not_reg64                               ;
