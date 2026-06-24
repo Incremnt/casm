@@ -220,10 +220,6 @@ trailing_chars_err:
   mov       rsi, e_trail_chars_msg
   jmp       err_exit_line
 
-incomp_instr_err:
-  mov       rsi, e_incomp_instr_msg
-  jmp       err_exit_line
-
 err_exit:
   xor       rcx, rcx
   push      rsi
@@ -284,7 +280,6 @@ e_reljmp_range_msg db ESC, '[31m', "[Error]: Relative jump out of range",       
 e_label_range_msg  db ESC, '[31m', "[Error]: Label's address is out of range",            ESC, '[0m', LF, NUL
 e_invalid_opds_msg db ESC, '[31m', "[Error]: Invalid operands",                           ESC, '[0m', LF, NUL
 e_trail_chars_msg  db ESC, '[31m', "[Error]: Trailing characters",                        ESC, '[0m', LF, NUL
-e_incomp_instr_msg db ESC, '[31m', "[Error]: Instruction is incompatible with long mode", ESC, '[0m', LF, NUL
 
 e_line_msg_st      db ESC, '[31m', "[Line]:  "
 E_LINE_MSG_ST_SZ      = $ - e_line_msg_st
