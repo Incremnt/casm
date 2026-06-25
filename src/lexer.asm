@@ -157,9 +157,12 @@ chd_traverse:
   pop       r15                               ; restore parental position and write IR
 
 write_ir:
+  cmp       byte [r12 - 1], ':'               ; don't exit with error if it's segment prefix
+  je        .skip_check                       ;
   movzx     rsi, byte [rcx + rax]             ;
   test      si, si                            ; error if character after lexeme is letter, number or string
   jz        unk_tkn_err                       ;
+.skip_check:
   cmp       r14, r9                           ; expand IR buffer if it needs more space
   jb        .skip_call                        ;
   call      exp_ir_buf                        ;
