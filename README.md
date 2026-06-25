@@ -27,3 +27,5 @@ CASM uses basic intel syntax, no AT&T support.
 5.  **No expression calculations (calculations exist only in memory expressions, you can multiply registers only)**
 6.  **All control directives start with . (.text/.data/.rodata/.entry/.org)**
 7.  **Code generation controls with usage flags (see above)**
+8.  **Comma is optional**
+9.  **Absolute jumps are reversed (jmp imm32 imm16/jmp imm32,imm16 instead of jmp imm16:imm32)**
