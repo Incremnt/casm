@@ -1014,7 +1014,8 @@ lex_trie:
     LEX_NODE 'x', G_REG16, R16_BX, 0, 1, TERM
     LEX_NODE 'h', G_REG8, R8_BH, 0, 1, TERM
     LEX_NODE 'l', G_REG8, R8_BL, 0, 1, TERM
-    LEX_NODE 'p', G_REG16, R16_BP, 0, 1, TERM
+    LEX_NODE 'p', G_REG16, R16_BP, 1, 2, TERM
+      LEX_NODE 'l', G_REG8, R8_BPL, 0, 0, AMD64 + TERM
     LEX_NODE 't', G_EINST, E_BT, 1, 4, TERM
       LEX_NODE 's', G_EINST, E_BTS, 0, 1, TERM
       LEX_NODE 'r', G_EINST, E_BTR, 0, 1, TERM
@@ -1054,7 +1055,8 @@ lex_trie:
       LEX_NODE ':', G_SPREF, SP_SS, 0, 0, TERM
     LEX_NODE 'u', 0, 0, 1, 2, 0
       LEX_NODE 'b', G_INSTR, I_SUB, 0, 0, TERM
-    LEX_NODE 'p', G_REG16, R16_SP, 0, 1, TERM
+    LEX_NODE 'p', G_REG16, R16_SP, 1, 2, TERM
+      LEX_NODE 'l', G_REG8, R8_SPL, 0, 0, AMD64 + TERM
     LEX_NODE 'i', G_REG16, R16_SI, 1, 4, TERM
       LEX_NODE 'l', G_REG8, R8_SIL, 0, 1, AMD64 + TERM
       LEX_NODE 'd', 0, 0, 1, 0, 0
