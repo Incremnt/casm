@@ -513,6 +513,8 @@ R8_R12B = 20
 R8_R13B = 21
 R8_R14B = 22
 R8_R15B = 23
+R8_SPL  = 36
+R8_BPL  = 37
 R8_SIL  = 38
 R8_DIL  = 39
 
@@ -578,5 +580,5 @@ R64_R15 = 23
 
 ; neutral group registers (for opcode short forms & parser)
 REG_R8  = 16
-REG_SIL = 38
+REG_SPL = 36
 R_CONST = 0xFF
