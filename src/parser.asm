@@ -423,7 +423,7 @@ ctrl_group:
   je        skip_ir                                ;
   cmp       byte [r12 + 1], REG_R8                 ;
   jb        .mod_not_rexb                          ;
-  cmp       byte [r12 + 1], REG_SIL                ;
+  cmp       byte [r12 + 1], REG_SPL                ;
   jae       .mod_not_rexb                          ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x01                       ;
@@ -440,7 +440,7 @@ ctrl_group:
   je        skip_ir                                ;
   cmp       byte [r12 + 1], REG_R8                 ;
   jb        .mod_not_rexr                          ;
-  cmp       byte [r12 + 1], REG_SIL                ;
+  cmp       byte [r12 + 1], REG_SPL                ;
   jae       .mod_not_rexr                          ;
   mov       rdi, qword [rex_ptr]                   ;
   or        byte [rdi], 0x04                       ;
@@ -1091,7 +1091,7 @@ traverse_operands:
   cmp       al, G_REG64                              ;
   je        .go_to_sibling                           ;
   cmp       ah, REG_R8                               ;
-  je        .go_to_sibling                           ;
+  jae       .go_to_sibling                           ;
   jmp       .compatible                              ;
 .no_siblings:
   cmp       ah, REG_R8                               ;
