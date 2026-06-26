@@ -1340,6 +1340,7 @@ traverse_operands:
   jz        parse_ir                                  ;
   test      rbx, RIPREL_BIT                           ;
   jz        .not_riprel                               ;
+  or        rbx, REGFIRST_BIT                         ;
   mov       byte [r14 - 1], 00000101b                 ;
   mov       qword [sib_offset_ptr], r14               ;
   lea       r14, [r14 + 4]                            ;
