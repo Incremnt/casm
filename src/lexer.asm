@@ -290,6 +290,8 @@ write_label:
   mov       byte [r14 + 1], sil              ; set long delimiter end IR
   lea       r14, [r14 + 2]                   ;
   movzx     rax, byte [r12]                  ;
+  cmp       byte [rcx + rax], VALID          ;
+  jne       unk_tkn_err                      ;
   jmp       next_lex                         ;
 
 write_string:
@@ -332,6 +334,8 @@ write_strend_ir:
   lea       r14, [r14 + 2]                   ;
   inc       r12                              ;
   movzx     rax, byte [r12]                  ;
+  cmp       byte [rcx + rax], VALID          ;
+  jne       unk_tkn_err                      ;
   jmp       next_lex                         ;
 
 write_number:
@@ -377,6 +381,8 @@ write_number:
 end_num_write:
   lea       r14, [r14 + rdi]                 ; make number 4 bytes long
   movzx     rax, byte [r12]                  ;
+  cmp       byte [rcx + rax], VALID          ;
+  jne       unk_tkn_err                      ;
   jmp       next_lex                         ;
 
 exp_ir_buf:
