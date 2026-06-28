@@ -122,11 +122,13 @@ traverse:
   jmp       traverse                          ;
 
 terminal:
-  inc       r12                               ; next lexeme character in al
-  mov       al, byte [r12]                    ;
+  inc       r12                               ; next lexeme character in rax
+  movzx     rax, byte [r12]                   ;
   cmp       word [r15 + LEX_CHDOFF_OFF], 0    ; write IR if node doesn't have children
   je        write_ir                          ;
-  push      r15                               ; else, save current position in stack
+  cmp       byte [rcx + rax], VALID           ;
+  je        write_ir                          ;
+  mov       r8, r15                           ;
   movzx     rdx, byte [r15 + LEX_CHDOFF_OFF]  ;
   lea       r15, [r15 + rdx * 8]              ; go to the child node
   jmp       chd_traverse                      ; traverse children of terminal node
@@ -144,6 +146,8 @@ chd_traverse:
   jnz       terminal                          ;
   inc       r12                               ; next lexeme character in al
   mov       al, byte [r12]                    ;
+  cmp       byte [rcx + rax], VALID           ;
+  je        unk_tkn_err                       ;
   mov       dx, word [r15 + LEX_CHDOFF_OFF]   ; go to the child node
   test      dx, dx                            ; error if node has no children
   jz        unk_tkn_err                       ;
@@ -154,7 +158,7 @@ chd_traverse:
   je        .to_parent                        ;
   jmp       unk_tkn_err                       ; else, error
 .to_parent:
-  pop       r15                               ; restore parental position and write IR
+  mov       r15, r8                           ; restore parental position and write IR
 
 write_ir:
   cmp       byte [r12 - 1], ':'               ; don't exit with error if it's segment prefix
