@@ -712,14 +712,14 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_address:
-  test      rbx, IMM_BIT + IMM64_BIT               ;
-  jz        invalid_operands_err                   ;
-  inc       qword [style_points]                   ; addresses are cool
-  lea       r12, [r12 + 2]                         ;
-  mov       r8, r12                                ;
-  mov       r13, qword [labelbuf_ptr]              ;
-  cmp       byte [r13], 0                          ;
-  je        .delayed_addr                          ;
+  test      rbx, IMM32_BIT + IMM64_BIT + REL32_BIT + REL8_BIT ;
+  jz        invalid_operands_err                              ;
+  inc       qword [style_points]                              ; addresses are cool
+  lea       r12, [r12 + 2]                                    ;
+  mov       r8, r12                                           ;
+  mov       r13, qword [labelbuf_ptr]                         ;
+  cmp       byte [r13], 0                                     ;
+  je        .delayed_addr                                     ;
 .compare_label:
   mov       al, byte [r12]                         ;
   cmp       byte [r13], al                         ;
