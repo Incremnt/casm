@@ -925,6 +925,10 @@ ctrl_group:
   xchg      ah, al                                 ;
   cmp       ax, C_LF                               ;
   je        trailing_chars_err                     ;
+  cmp       ax, C_COM                              ;
+  je        trailing_chars_err                     ;
+  cmp       byte [r12 - 2], G_DIR                  ;
+  je        trailing_chars_err                     ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -1378,7 +1382,7 @@ dir_group:
   jz        invalid_expression_err                      ;
   and       rbx, PHFIRST_BIT                            ; just set bits
   or        rbx, UNLIMSTR_BIT + IMM8_BIT + UNLIMIMM_BIT ; set unlimited lenght to string (quality of life)
-  call      operand_mode                                ;
+  call      operand_mode.num_only                       ;
   lea       r12, [r12 + 2]                              ;
   jmp       parse_ir                                    ;
 
@@ -1387,7 +1391,7 @@ dir_group:
   jz        invalid_expression_err                      ;
   and       rbx, PHFIRST_BIT                            ;
   or        rbx, IMM16_BIT + UNLIMIMM_BIT               ;
-  call      operand_mode                                ;
+  call      operand_mode.num_only                       ;
   lea       r12, [r12 + 2]                              ;
   jmp       parse_ir                                    ;
 
@@ -1396,7 +1400,7 @@ dir_group:
   jz        invalid_expression_err                      ;
   and       rbx, PHFIRST_BIT                            ;
   or        rbx, IMM32_BIT + UNLIMIMM_BIT               ;
-  call      operand_mode                                ;
+  call      operand_mode.num_only                       ;
   lea       r12, [r12 + 2]                              ;
   jmp       parse_ir                                    ;
 
@@ -1484,7 +1488,7 @@ dir_group:
   jz        invalid_expression_err                    ;
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, IMM64_BIT + UNLIMIMM_BIT             ;
-  call      operand_mode                              ;
+  call      operand_mode.num_only                     ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
@@ -1645,6 +1649,7 @@ operand_mode:
   mov       qword [group_jmp_tbl + G_SREG * 8], skip_ir                        ;
   mov       qword [group_jmp_tbl + G_CREG * 8], skip_ir                        ;
   mov       qword [group_jmp_tbl + G_DREG * 8], skip_ir                        ;
+.num_only:
   mov       qword [ctrl_jmp_tbl + C_COM * 8], ctrl_group.handle_comma          ;
   ret                                                                          ;
 
