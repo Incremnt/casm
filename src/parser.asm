@@ -927,8 +927,6 @@ ctrl_group:
   je        trailing_chars_err                     ;
   cmp       ax, C_COM                              ;
   je        trailing_chars_err                     ;
-  cmp       byte [r12 - 2], G_DIR                  ;
-  je        trailing_chars_err                     ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -1383,6 +1381,10 @@ dir_group:
   and       rbx, PHFIRST_BIT                            ; just set bits
   or        rbx, UNLIMSTR_BIT + IMM8_BIT + UNLIMIMM_BIT ; set unlimited lenght to string (quality of life)
   call      operand_mode.num_only                       ;
+  mov       ax, word [r12 + 2]                          ;
+  xchg      ah, al                                      ;
+  cmp       ax, C_COM                                   ;
+  je        trailing_chars_err                          ;
   lea       r12, [r12 + 2]                              ;
   jmp       parse_ir                                    ;
 
@@ -1392,6 +1394,10 @@ dir_group:
   and       rbx, PHFIRST_BIT                            ;
   or        rbx, IMM16_BIT + UNLIMIMM_BIT               ;
   call      operand_mode.num_only                       ;
+  mov       ax, word [r12 + 2]                          ;
+  xchg      ah, al                                      ;
+  cmp       ax, C_COM                                   ;
+  je        trailing_chars_err                          ;
   lea       r12, [r12 + 2]                              ;
   jmp       parse_ir                                    ;
 
@@ -1401,6 +1407,10 @@ dir_group:
   and       rbx, PHFIRST_BIT                            ;
   or        rbx, IMM32_BIT + UNLIMIMM_BIT               ;
   call      operand_mode.num_only                       ;
+  mov       ax, word [r12 + 2]                          ;
+  xchg      ah, al                                      ;
+  cmp       ax, C_COM                                   ;
+  je        trailing_chars_err                          ;
   lea       r12, [r12 + 2]                              ;
   jmp       parse_ir                                    ;
 
@@ -1489,6 +1499,10 @@ dir_group:
   and       rbx, PHFIRST_BIT                          ;
   or        rbx, IMM64_BIT + UNLIMIMM_BIT             ;
   call      operand_mode.num_only                     ;
+  mov       ax, word [r12 + 2]                        ;
+  xchg      ah, al                                    ;
+  cmp       ax, C_COM                                 ;
+  je        trailing_chars_err                        ;
   lea       r12, [r12 + 2]                            ;
   jmp       parse_ir                                  ;
 
