@@ -1133,6 +1133,10 @@ traverse_operands:
   jb        .not_mem                               ;
   cmp       ah, C_QWORD                            ;
   ja        .not_mem                               ;
+  cmp       byte [r13 + 2], G_CTRL                 ;
+  jne       invalid_expression_err                 ;
+  cmp       byte [r13 + 3], C_MEMST                ;
+  jne       invalid_expression_err                 ;
   cmp       ah, C_QWORD                            ;
   jne       .skip_mem                              ;
   or        rbx, REXW_BIT                          ;
@@ -1188,6 +1192,8 @@ traverse_operands:
   jne       .mem_skip_str                          ;
   inc       r13                                    ;
 .skip_str_skip:
+  cmp       byte [r13 - 1], C_LBL                  ;
+  je        invalid_expression_err                 ;
   cmp       byte [r13 - 1], C_MEMEN                ;
   jne       .skip_mem                              ;
 .not_mem:
