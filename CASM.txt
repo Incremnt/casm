@@ -1,0 +1,99 @@
+                                        
+    ▄▄▄▄                                
+  ██▀▀▀▀█                               
+ ██▀        ▄█████▄  ▄▄█████▄  ████▄██▄ 
+ ██         ▀ ▄▄▄██  ██▄▄▄▄ ▀  ██ ██ ██ 
+ ██▄       ▄██▀▀▀██   ▀▀▀▀██▄  ██ ██ ██ 
+  ██▄▄▄▄█  ██▄▄▄███  █▄▄▄▄▄██  ██ ██ ██ 
+    ▀▀▀▀    ▀▀▀▀ ▀▀   ▀▀▀▀▀▀   ▀▀ ▀▀ ▀▀ 
+
+== Cool assembler programmer's manual ==
+
+Cool assembler is an educational project and
+not recommended to use for commercial purposes.
+Instead, you can have fun with it and report
+bugs so I can learn faster. (Also sorry for bad english :)
+
+1.  Overview
+  1.1  System requirements
+  1.2  Command line usage
+  1.3  Assembler messages
+
+2.  Syntax
+  2.1  Labels
+  2.2  Memory expressions
+  2.3  Jumps
+  2.4  Expressions
+  2.5  Directives
+  2.6  Comma
+
+
+===  1. Overview     ===
+
+CASM is a single-pass assembly language compiler,
+which was written in x86-64 flat assembler for the
+Linux operating system.
+
+1.1  System requirements
+CASM require a x86-64 architecture processor and
+can produce either x86 or x86-64 code. It was written
+for the Linux OS only so it also has a ELF format support.
+You also need a flat assembler to build it (download on
+github: https://github.com/tgrysztar/fasm).
+
+1.2  Command line usage
+You need to provide two arguments to execute CASM - first (or not
+if flags were also provided) is the name of the source file, second
+is the name of the output file. You can also provide flags to change
+compiler behavior:
+  -a, --amd64 generates x86-64 code,
+  -n, --noelf generates no ELF header, 
+  -b, --bytes shows output file size in bytes,
+  -s, --style shows your rank and style points percentage.
+All flags must be before the source file's name, else it will crash
+with error.
+
+1.3  Assembler messages
+CASM does not say anything by default, you need to
+make mistake or provide flags. Here are examples:
+  Error message (red)
+    [Error]: Unknown token.
+    [Line]:  671
+  File size (provided by --bytes or -b flags)
+    [Size]:  256 bytes
+  Style (provided by style flags, has a different color for each rank)
+    [Style]: 75%
+    [Rank]:  S
+
+
+===  2. Syntax     ===
+
+CASM uses basic Intel syntax but has some quirks. Here they are:
+
+2.1  Labels
+Labels can be defined with # prefix, name can not contain null, tabs,
+newline, space and some special symbols (,+-*;[]). Label reference follows
+the same rule but can be defined with @ prefix only.
+
+2.2  Memory expressions
+Memory expressions must always have a size keyword (byte/word/dword/qword) that follows other operand's size.
+They also can multiply registers only (by 1, 2, 4 or 8).
+
+2.3  Jumps
+Jumps can be done by simply writing either a number (considered as relative)
+after a jump instruction, label reference or memory expression. Also far jumps'
+operands are reversed and must not contain : character (separated by the comma
+or space/tab).
+
+2.4  Expressions
+Expressions can't exist anywhere except memory expressions.
+
+2.5  Directives
+All directives except rb/rw/rd/rq/db/dw/dd/dq start with dot. Here are supported directives:
+  .text/.data/.rodata/.bss - segment expressions which create PHDR
+  .org - change current label address to the specified value
+  .entry - specify custom entry address
+  .times - repeat the line specified times
+
+2.6  Comma
+Comma is optional operand separator, you can replace it with space or tab.
