@@ -12,14 +12,7 @@
 ;
 ; You should have received a copy of the GNU General Public License
 ; along with this program. If not, see <https://www.gnu.org/licenses/>.
-;
-;================================;
-; Project:   Cool assembler      ;
-; File:      codegen.asm         ;
-; File type: Part                ;
-; Author:    Incremnt            ;
-; License:   GPLv3               ;
-;================================;
+
 codegen:
   mov       rbx, qword [output_fd]                               ;
   cmp       byte [do_gen_elf], 0                                 ; don't generate headers if there was --noelf flag
