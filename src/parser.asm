@@ -983,7 +983,6 @@ ctrl_group:
   jmp       parse_ir                               ;
 
 .handle_lf:
-  inc       qword [current_line]                   ;
   and       rbx, PHFIRST_BIT                       ;
   or        rbx, INSTR_BIT + DIR_BIT + LABEL_BIT   ; set instruction + directive + label bits
   call      normal_mode                            ; restore handler labels after custom modes
@@ -993,6 +992,7 @@ ctrl_group:
   mov       r12, qword [repeat_ir_ptr]             ;
   jmp       parse_ir                               ;
 .no_repeats:
+  inc       qword [current_line]                   ;
   lea       r12, [r12 + 2]                         ;
   jmp       parse_ir                               ;
 
@@ -1684,9 +1684,13 @@ macro_group:
   jmp       qword [macro_jmp_tbl + rax * 8]           ;
 
 .handle_repeat:
+  push      rbx                                       ;
   and       rbx, INSTR_BIT + DIR_BIT                  ;
   cmp       rbx, INSTR_BIT + DIR_BIT                  ;
   jne       invalid_expression_err                    ;
+  pop       rbx                                       ;
+  cmp       dword [repeats_count], 1                  ;
+  ja        invalid_operands_err                      ;
   inc       qword [style_points]                      ; repeats are cool
   or        rbx, REPEAT_BIT                           ;
   lea       r12, [r12 + 2]                            ;
