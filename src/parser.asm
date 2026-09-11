@@ -1734,6 +1734,8 @@ macro_group:
   je        .skip_longtkn                             ;
   cmp       ax, C_ADR                                 ;
   je        .skip_longtkn                             ;
+  cmp       ax, C_LBL                                 ;
+  je        .skip_longtkn                             ;
   cmp       ax, C_STR                                 ;
   je        .skip_longtkn                             ;
   cmp       ax, C_NUM                                 ;
