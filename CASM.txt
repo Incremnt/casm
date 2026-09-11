@@ -93,7 +93,7 @@ All directives except rb/rw/rd/rq/db/dw/dd/dq start with dot. Here are supported
   .text/.data/.rodata/.bss - segment expressions which create PHDR
   .org - change current label address to the specified value
   .entry - specify custom entry address
-  .times - repeat the line specified times
+  .times - repeat the line specified times. Line must not contain label definitions or forward references after a .times directive
 
 2.6  Comma
 Comma is optional operand separator, you can replace it with space or tab.
