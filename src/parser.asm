@@ -838,6 +838,8 @@ ctrl_group:
   je        .delayed_addr                          ;
   jmp       .compare_label                         ;
 .delayed_addr:
+  cmp       dword [repeats_count], 1               ;
+  ja        invalid_operands_err                   ;
   mov       rdi, qword [deladrbuf_ptr]             ;
   add       rdi, qword [deladr_offset]             ;
   mov       qword [rdi], r12                       ;
@@ -930,6 +932,8 @@ ctrl_group:
   je        .sib_deladdr                           ;
   jmp       .sib_compare_label                     ;
 .sib_deladdr:
+  cmp       dword [repeats_count], 1               ;
+  ja        invalid_operands_err                   ;
   mov       rdi, qword [deladrbuf_ptr]             ;
   add       rdi, qword [deladr_offset]             ;
   mov       qword [rdi], r12                       ;
@@ -1738,6 +1742,7 @@ macro_group:
   jmp       .calc_repsz_loop                          ;
 .skip_longtkn:
   mov       dx, ax                                    ;
+  lea       r12, [r12 + 2]                            ;
 .longtkn_loop:
   mov       ax, word [r12]                            ;
   xchg      ah, al                                    ;
