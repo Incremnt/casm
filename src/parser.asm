@@ -1724,6 +1724,7 @@ macro_group:
   jne       .skip_str_loop                            ;
   inc       r12                                       ;
 .calc_rep_size:
+  xor       rcx, rcx                                  ;
   push      r12                                       ;
 .calc_repsz_loop:
   mov       ax, word [r12]                            ;
@@ -1759,9 +1760,10 @@ macro_group:
   jmp       .calc_repsz_loop                          ;
 .skip_numtkn:
   lea       r12, [r12 + 6]                            ;
+  lea       rcx, [rcx + 2]                            ;
   jmp       .calc_repsz_loop                          ;
 .alloc_rep_mem:
-  mov       rdi, r12                                  ;
+  lea       rdi, [r12 + rcx]                          ;
   pop       r12                                       ;
   sub       rdi, r12                                  ;
   mov       qword [repeat_line_sz], rdi               ;
