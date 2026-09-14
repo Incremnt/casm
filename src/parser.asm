@@ -1779,6 +1779,8 @@ repeats_alloc:
   mov       qword [heap_ptr], rax                     ;
   mov       rdi, rax                                  ;
   SYSCALL_1 SYS_BRK, rdi                              ; allocate memory for the repeated instructions
+  cmp       rax, rdi                                  ;
+  jne       brk_err                                   ;
   ret                                                 ;
 
 modrm_mode:
