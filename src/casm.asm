@@ -112,6 +112,8 @@ parse_flags:
   cmp       rax, rbp                                                       ;
   je        brk_err                                                        ; handle brk error
   SYSCALL_1 SYS_BRK, rbp                                                   ; allocate memory for file
+  cmp       rax, rbp                                                       ;
+  jne       brk_err                                                        ;
   mov       qword [lex_irbuf_ptr], r14                                     ;
   pop       rbp                                                            ;
 
