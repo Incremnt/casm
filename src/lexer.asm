@@ -424,6 +424,8 @@ handle_eof:
   lea       rsi, [rax + r13 * 8]                          ; allocate memory for the buffers
   mov       qword [heap_ptr], rsi                         ;
   SYSCALL_1 SYS_BRK, rsi                                  ;
+  cmp       rax, rsi                                      ;
+  jne       brk_err                                       ;
   pop       rax                                           ;
   lea       r14, [rbp + r13 * 4 + 3]                      ;
   lea       r14, [r14 + r13 * 2]                          ;
