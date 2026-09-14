@@ -387,6 +387,8 @@ exp_ir_buf:
   SYSCALL_1 SYS_BRK, 0                       ; get current heap pointer
   lea       rsi, [rax + r13]                 ;
   SYSCALL_1 SYS_BRK, rsi                     ; allocate memory
+  cmp       rax, rsi                         ;
+  jne       brk_err                          ;
   mov       rsi, qword [lex_irbuf_ptr]       ;
   lea       r13, [r13 * 2]                   ; it will allocate x2 more memory next time
   lea       rbp, [rsi + r13 - 1]             ;
